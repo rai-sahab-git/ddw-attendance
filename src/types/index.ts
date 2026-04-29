@@ -1,15 +1,15 @@
 export type UserRole = 'admin' | 'employee'
 
 export type AttendanceStatus =
-    | 'P'    // Present
-    | '2P'   // Double Present
-    | 'A'    // Absent
-    | 'H'    // Half Day
-    | 'OT'   // Overtime
-    | '2OT'  // Double OT
-    | 'L'    // Leave
-    | 'HD'   // Holiday
-    | 'WO'   // Week Off
+    | 'P'   // Present
+    | '2P'  // Double Present
+    | 'A'   // Absent
+    | 'H'   // Half Day
+    | 'OT'  // Overtime
+    | '2OT' // Double OT
+    | 'L'   // Leave
+    | 'HD'  // Holiday
+    | 'WO'  // Week Off
 
 export interface Employee {
     id: string
@@ -18,7 +18,8 @@ export interface Employee {
     phone?: string
     monthly_salary: number
     per_day_rate: number
-    pin: string
+    pin?: string   // ✅ optional — renamed to login_pin in DB
+    login_pin?: string   // ✅ actual DB column name
     joining_date: string
     is_active: boolean
 }

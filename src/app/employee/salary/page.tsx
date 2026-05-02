@@ -38,7 +38,7 @@ export default async function EmployeeSalaryPage({
     const advanceTotal = monthAdvances.reduce((s, a) => s + a.amount, 0)
 
     const calc = calculateSalary(
-        emp as any,   // ← bas yeh change karo
+        emp as any,
         attendance as any ?? [],
         advanceTotal,
         savedRecord?.ot_amount ?? 0,

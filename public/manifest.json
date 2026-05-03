@@ -1,22 +1,55 @@
 {
     "name": "DDW Attendance",
     "short_name": "DDW",
-    "description": "Divine Digital Group Attendance & Salary Management",
-    "start_url": "/",
+    "description": "Divine Digital Group — Attendance & Salary Management",
+    "start_url": "/admin/dashboard",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#F4F6F9",
     "theme_color": "#00A651",
-    "orientation": "portrait",
+    "orientation": "portrait-primary",
+    "categories": [
+        "business",
+        "productivity"
+    ],
     "icons": [
         {
             "src": "/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
             "src": "/icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
-    ]
+    ],
+    "shortcuts": [
+        {
+            "name": "Mark Attendance",
+            "short_name": "Attendance",
+            "url": "/admin/attendance/mark",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Salary Sheet",
+            "short_name": "Salary",
+            "url": "/admin/salary",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "screenshots": [],
+    "prefer_related_applications": false
 }

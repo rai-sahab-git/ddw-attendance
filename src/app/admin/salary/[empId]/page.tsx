@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
+import { notFound } from 'next/navigation'
 import { getMonthName, formatCurrency } from '@/lib/utils'
 import { calculateSalary } from '@/lib/salary-calculator'
-import SalaryDetailClient from './client'
+import SalaryEditForm from './SalaryEditForm'
 
 export default async function SalaryDetailPage({
     params,
@@ -21,176 +21,156 @@ export default async function SalaryDetailPage({
     const month = parseInt(sp.month ?? String(today.getMonth() + 1))
     const year = parseInt(sp.year ?? String(today.getFullYear()))
 
-    const [{ data: emp }, { data: attendance }, { data: advances }, { data: savedRecord }] =
-        await Promise.all([
-            supabase.from('employees').select('*').eq('id', empId).single(),
-            supabase.from('attendance_records').select('*').eq('employee_id', empId).eq('month', month).eq('year', year),
-            supabase.from('advance_payments').select('*').eq('employee_id', empId),
-            supabase.from('monthly_salary').select('*').eq('employee_id', empId).eq('month', month).eq('year', year).single(),
-        ])
+    const [
+        { data: employee },
+        { data: attendance },
+        { data: advances },
+        { data: savedRecord },
+    ] = await Promise.all([
+        supabase.from('employees').select('*').eq('id', empId).single(),
+        supabase.from('attendance_records').select('*').eq('employee_id', empId).eq('month', month).eq('year', year),
+        supabase.from('advance_payments').select('*').eq('employee_id', empId).order('date', { ascending: false }),
+        supabase.from('monthly_salary').select('*').eq('employee_id', empId).eq('month', month).eq('year', year).single(),
+    ])
 
-    if (!emp) notFound()
+    if (!employee) notFound()
 
-    const monthAdvances = advances?.filter(a => a.deduct_month === month && a.deduct_year === year) ?? []
-    const advanceTotal = monthAdvances.reduce((s, a) => s + a.amount, 0)
+    const monthlyAdvance = advances
+        ?.filter(a => a.deduct_month === month && a.deduct_year === year)
+        .reduce((s: number, a: any) => s + a.amount, 0) ?? 0
 
-    const calc = calculateSalary(
-        emp,
-        attendance as any ?? [],
-        advanceTotal,
+    const salary = calculateSalary(
+        employee,
+        (attendance ?? []) as any,
+        monthlyAdvance,
         savedRecord?.ot_amount ?? 0,
         savedRecord?.extra_work_amount ?? 0,
         savedRecord?.paid_amount ?? 0,
     )
 
-    const prevDate = new Date(year, month - 2, 1)
-    const nextDate = new Date(year, month, 1)
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Link href={`/admin/salary?month=${month}&year=${year}`} style={{
-                    width: '38px', height: '38px', background: 'white',
-                    borderRadius: '12px', border: '1px solid #E5E7EB',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    textDecoration: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', color: '#374151',
                 }}>
-                    <ArrowLeft size={18} color="#374151" />
+                    <ChevronLeft size={20} />
                 </Link>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 800, fontSize: '18px', color: '#111827' }}>{emp.name}</div>
-                    <div style={{ fontSize: '12px', color: '#6B7280' }}>{emp.emp_code} • {getMonthName(month)} {year}</div>
-                </div>
-                {/* Month nav */}
-                <div style={{ display: 'flex', gap: '4px' }}>
-                    <Link href={`/admin/salary/${empId}?month=${prevDate.getMonth() + 1}&year=${prevDate.getFullYear()}`}
-                        style={{ width: '30px', height: '30px', background: 'white', borderRadius: '8px', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
-                        <ChevronLeft size={14} color="#374151" />
-                    </Link>
-                    <Link href={`/admin/salary/${empId}?month=${nextDate.getMonth() + 1}&year=${nextDate.getFullYear()}`}
-                        style={{ width: '30px', height: '30px', background: 'white', borderRadius: '8px', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
-                        <ChevronRight size={14} color="#374151" />
-                    </Link>
+                <div>
+                    <h1 style={{ fontWeight: 800, fontSize: '20px', color: '#111827', margin: 0 }}>{employee.name}</h1>
+                    <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '1px' }}>
+                        {getMonthName(month)} {year} — {employee.emp_code}
+                    </p>
                 </div>
             </div>
 
-            {/* Attendance Summary */}
-            <div style={{
-                background: 'linear-gradient(135deg, #00A651 0%, #007A3D 100%)',
-                borderRadius: '20px', padding: '20px', color: 'white',
-                boxShadow: '0 8px 24px rgba(0,166,81,0.25)',
-            }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, opacity: 0.8, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Attendance Summary
+            {/* Salary Breakdown Card */}
+            <div style={{ background: 'linear-gradient(135deg,#1a1a2e,#16213e)', borderRadius: '20px', padding: '20px' }}>
+                <div style={{ fontWeight: 700, fontSize: '12px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
+                    Salary Breakdown
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+
+                {/* Big payable */}
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>Net Payable</div>
+                    <div style={{ fontSize: '36px', fontWeight: 900, color: '#34D399' }}>
+                        {formatCurrency(salary.payableAmount)}
+                    </div>
+                    {salary.balanceAmount > 0 && (
+                        <div style={{ fontSize: '13px', color: '#FCA5A5', marginTop: '4px' }}>
+                            Balance due: {formatCurrency(salary.balanceAmount)}
+                        </div>
+                    )}
+                    {salary.paidAmount > 0 && salary.balanceAmount <= 0 && (
+                        <div style={{ fontSize: '13px', color: '#34D399', marginTop: '4px' }}>✓ Fully Paid</div>
+                    )}
+                </div>
+
+                {/* Grid breakdown */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     {[
-                        { label: 'Present', value: calc.presentDays, bg: 'rgba(255,255,255,0.2)' },
-                        { label: 'Absent', value: calc.absentDays, bg: 'rgba(239,68,68,0.3)' },
-                        { label: 'Half Day', value: calc.halfDays, bg: 'rgba(245,158,11,0.3)' },
-                        { label: 'Extra', value: calc.extraDays, bg: 'rgba(59,130,246,0.3)' },
-                    ].map(({ label, value, bg }) => (
-                        <div key={label} style={{ background: bg, borderRadius: '12px', padding: '10px 8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '22px', fontWeight: 900 }}>{value}</div>
-                            <div style={{ fontSize: '10px', opacity: 0.8, marginTop: '2px' }}>{label}</div>
+                        { label: 'Present Days', value: `${salary.presentDays}d`, color: '#86EFAC' },
+                        { label: 'Absent Days', value: `${salary.absentDays}d`, color: '#FCA5A5' },
+                        { label: 'Half Days', value: `${salary.halfDays}d`, color: '#FDE68A' },
+                        { label: 'Double Present', value: `${salary.extraDays}d`, color: '#93C5FD' },
+                        { label: 'Base Salary', value: formatCurrency(employee.monthly_salary), color: '#E5E7EB' },
+                        { label: 'Per Day', value: formatCurrency(employee.per_day_rate), color: '#E5E7EB' },
+                        { label: 'Absent Deduction', value: `-${formatCurrency(salary.absentDeduction)}`, color: '#FCA5A5' },
+                        { label: 'Halfday Deduction', value: `-${formatCurrency(salary.halfdayDeduction)}`, color: '#FDE68A' },
+                        { label: 'OT Amount', value: `+${formatCurrency(salary.otAmount)}`, color: '#FD8A5E' },
+                        { label: 'Advance', value: `-${formatCurrency(salary.advanceTotal)}`, color: '#C4B5FD' },
+                        { label: 'Gross Earning', value: formatCurrency(salary.grossEarning), color: '#34D399' },
+                        { label: 'Paid Amount', value: formatCurrency(salary.paidAmount), color: '#60A5FA' },
+                    ].map(({ label, value, color }) => (
+                        <div key={label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '10px 12px' }}>
+                            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '3px' }}>{label}</div>
+                            <div style={{ fontSize: '14px', fontWeight: 800, color }}>{value}</div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Salary Breakdown */}
-            <div style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                <div style={{ padding: '16px', borderBottom: '1px solid #F3F4F6' }}>
-                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#111827' }}>Salary Breakdown</div>
-                </div>
-
-                {[
-                    { label: 'Monthly Salary', value: formatCurrency(emp.monthly_salary), color: '#111827', sign: '' },
-                    { label: 'Per Day Rate', value: formatCurrency(emp.per_day_rate) + '/day', color: '#6B7280', sign: '', small: true },
-                    { label: 'Absent Deduction', value: formatCurrency(calc.absentDeduction), color: '#EF4444', sign: '-' },
-                    { label: 'Half Day Deduction', value: formatCurrency(calc.halfdayDeduction), color: '#F59E0B', sign: '-' },
-                    { label: 'OT Amount', value: formatCurrency(calc.otAmount), color: '#F97316', sign: '+' },
-                    { label: 'Advance Deduction', value: formatCurrency(calc.advanceTotal), color: '#8B5CF6', sign: '-' },
-                ].map(({ label, value, color, sign, small }) => (
-                    <div key={label} style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '12px 16px', borderBottom: '1px solid #F9FAFB',
-                    }}>
-                        <div style={{ fontSize: small ? '12px' : '14px', color: '#6B7280' }}>{label}</div>
-                        <div style={{ fontSize: small ? '12px' : '14px', fontWeight: 600, color }}>
-                            {sign}{value}
-                        </div>
-                    </div>
-                ))}
-
-                {/* Payable Total */}
-                <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '16px', background: '#F0FDF4',
-                }}>
-                    <div style={{ fontWeight: 800, fontSize: '16px', color: '#111827' }}>Net Payable</div>
-                    <div style={{ fontWeight: 900, fontSize: '22px', color: '#00A651' }}>
-                        {formatCurrency(calc.payableAmount)}
-                    </div>
-                </div>
-            </div>
-
-            {/* Payment Section — client component for interactivity */}
-            <SalaryDetailClient
-                empId={empId}
+            {/* Edit Form */}
+            <SalaryEditForm
+                employee={employee}
                 month={month}
                 year={year}
-                payableAmount={calc.payableAmount}
-                initialPaidAmount={calc.paidAmount}
-                initialOtAmount={calc.otAmount}
-                savedRecordId={savedRecord?.id}
+                savedRecord={savedRecord}
+                currentSalary={salary}
+                monthlyAdvance={monthlyAdvance}
             />
 
             {/* Advance History */}
-            {advances && advances.length > 0 && (
-                <div style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                    <div style={{ padding: '16px', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ fontWeight: 700, fontSize: '15px', color: '#111827' }}>Advance History</div>
-                        <Link href={`/admin/salary/${empId}/advance?month=${month}&year=${year}`} style={{
-                            fontSize: '12px', color: '#00A651', fontWeight: 700, textDecoration: 'none',
-                        }}>
-                            + Add
-                        </Link>
+            <div style={{ background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '13px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Advance History
                     </div>
-                    {advances.slice(0, 5).map(adv => (
-                        <div key={adv.id} style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '12px 16px', borderBottom: '1px solid #F9FAFB',
-                        }}>
-                            <div>
-                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#111827' }}>
-                                    {adv.description || 'Advance'}
-                                </div>
-                                <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
-                                    {new Date(adv.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                    {adv.deduct_month === month ? ' • This month' : ''}
-                                </div>
-                            </div>
-                            <div style={{ fontWeight: 800, fontSize: '15px', color: '#8B5CF6' }}>
-                                -{formatCurrency(adv.amount)}
-                            </div>
-                        </div>
-                    ))}
+                    <Link href={`/admin/salary/${empId}/advance?month=${month}&year=${year}`} style={{
+                        background: '#FEF3C7', color: '#B45309', borderRadius: '8px',
+                        padding: '6px 12px', fontWeight: 700, fontSize: '12px', textDecoration: 'none',
+                    }}>
+                        + Add
+                    </Link>
                 </div>
-            )}
 
-            {/* Add Advance button */}
-            <Link href={`/admin/salary/${empId}/advance?month=${month}&year=${year}`} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                background: 'white', border: '2px dashed #D1D5DB',
-                borderRadius: '16px', padding: '14px',
-                textDecoration: 'none', color: '#6B7280', fontWeight: 600, fontSize: '14px',
-            }}>
-                <span style={{ fontSize: '18px' }}>💳</span> Add Advance / Deduction
-            </Link>
-
+                {!advances?.length ? (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#9CA3AF', fontSize: '13px' }}>
+                        No advance records
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {advances.map((adv: any) => (
+                            <div key={adv.id} style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '10px 12px', background: '#FAFAFA', borderRadius: '10px',
+                            }}>
+                                <div>
+                                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>
+                                        {formatCurrency(adv.amount)}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                                        {adv.date} • {adv.description || 'Advance'}
+                                    </div>
+                                </div>
+                                <div style={{
+                                    padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+                                    background: adv.is_deducted ? '#F0FDF4' : '#FEF3C7',
+                                    color: adv.is_deducted ? '#059669' : '#B45309',
+                                }}>
+                                    {adv.is_deducted
+                                        ? `Deducted ${adv.deduct_month ? `(${getMonthName(adv.deduct_month).slice(0, 3)})` : ''}`
+                                        : 'Pending'}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

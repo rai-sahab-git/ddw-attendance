@@ -1,16 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
-import { notFound } from 'next/navigation'
 import EmployeeForm from '../EmployeeForm'
 
-export default async function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params
-    const supabase = await createClient()
-    const { data: employee } = await supabase.from('employees').select('*').eq('id', id).single()
-
-    if (!employee) notFound()
-
+export default function NewEmployeePage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Header */}
@@ -23,12 +15,12 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
                     <ChevronLeft size={20} />
                 </Link>
                 <div>
-                    <h1 style={{ fontWeight: 800, fontSize: '20px', color: '#111827', margin: 0 }}>{employee.name}</h1>
-                    <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '1px' }}>{employee.emp_code}</p>
+                    <h1 style={{ fontWeight: 800, fontSize: '20px', color: '#111827', margin: 0 }}>Add Employee</h1>
+                    <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '1px' }}>Fill in the details below</p>
                 </div>
             </div>
 
-            <EmployeeForm employee={employee} />
+            <EmployeeForm isNew />
         </div>
     )
 }

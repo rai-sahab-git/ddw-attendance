@@ -4,7 +4,7 @@ import { updateSession } from '@/lib/supabase/middleware'
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
-    // ✅ Employee API routes — bypass completely (cookie-based auth, not Supabase auth)
+    // ✅ Employee auth API — bypass (cookie-based, not Supabase)
     if (pathname.startsWith('/api/employee-auth')) {
         return NextResponse.next()
     }
@@ -14,20 +14,30 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next()
     }
 
-    // ✅ Employee pages — check emp_session cookie instead of Supabase auth
+    // ✅ Public routes — allow without auth
+    if (pathname === '/login' || pathname === '/') {
+        return NextResponse.next()
+    }
+
+    // ✅ Employee pages — check emp_session cookie
     if (pathname.startsWith('/employee')) {
         const empSession = request.cookies.get('emp_session')
         if (!empSession?.value) {
-            return NextResponse.redirect(new URL('/login', request.url))
+            return NextResponse.redirect(new URL('/login?tab=employee', request.url))
         }
         return NextResponse.next()
     }
 
-    // ✅ Admin + everything else — Supabase auth check
-    return await updateSession(request)
+    // ✅ Admin pages — Supabase auth check (redirects to /login if not logged in)
+    if (pathname.startsWith('/admin')) {
+        const response = await updateSession(request)
+        // updateSession returns redirect to /login if no session
+        return response
+    }
+
+    return NextResponse.next()
 }
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 export const config = {
     matcher: [
         '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',

@@ -1,90 +1,102 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, ChevronRight } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 
 export default async function EmployeesPage() {
     const supabase = await createClient()
-
     const { data: employees } = await supabase
         .from('employees')
         .select('*')
         .order('emp_code', { ascending: true })
 
+    const active = employees?.filter(e => e.is_active).length ?? 0
+    const inactive = employees?.filter(e => !e.is_active).length ?? 0
+
     return (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                    <h1 className="text-xl font-bold text-gray-900">Employees</h1>
-                    <p className="text-sm text-gray-500">{employees?.length ?? 0} total</p>
+                    <h1 style={{ fontWeight: 800, fontSize: '22px', color: '#111827', margin: 0 }}>Employees</h1>
+                    <p style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>{employees?.length ?? 0} total</p>
                 </div>
-                <Link
-                    href="/admin/employees/add"
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
-                >
-                    <UserPlus size={16} />
-                    Add
+                <Link href="/admin/employees/new" style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: 'linear-gradient(135deg,#00A651,#059669)', color: 'white',
+                    padding: '10px 16px', borderRadius: '12px', textDecoration: 'none',
+                    fontWeight: 700, fontSize: '13px', boxShadow: '0 2px 8px rgba(0,166,81,0.3)',
+                }}>
+                    <UserPlus size={16} /> Add
                 </Link>
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: '#F0FDF4', borderRadius: '14px', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '26px', fontWeight: 900, color: '#059669' }}>{active}</div>
+                    <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>Active</div>
+                </div>
+                <div style={{ background: '#FEF2F2', borderRadius: '14px', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '26px', fontWeight: 900, color: '#EF4444' }}>{inactive}</div>
+                    <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>Inactive</div>
+                </div>
             </div>
 
             {/* Employee List */}
             {!employees?.length ? (
-                <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <UserPlus size={24} className="text-gray-400" />
-                    </div>
-                    <p className="text-gray-900 font-medium">No employees yet</p>
-                    <p className="text-sm text-gray-500 mt-1">Add your first employee to get started</p>
-                    <Link
-                        href="/admin/employees/add"
-                        className="inline-block mt-4 bg-green-600 text-white text-sm font-medium px-6 py-2 rounded-xl"
-                    >
+                <div style={{ background: 'white', borderRadius: '16px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <div style={{ fontSize: '40px', marginBottom: '12px' }}>👤</div>
+                    <div style={{ fontWeight: 700, fontSize: '16px', color: '#111827', marginBottom: '6px' }}>No employees yet</div>
+                    <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '20px' }}>Add your first employee to get started</div>
+                    <Link href="/admin/employees/new" style={{
+                        display: 'inline-block', background: '#00A651', color: 'white',
+                        padding: '10px 20px', borderRadius: '10px', textDecoration: 'none', fontWeight: 700, fontSize: '14px',
+                    }}>
                         Add Employee
                     </Link>
                 </div>
             ) : (
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {employees.map(emp => (
-                        <Link
-                            key={emp.id}
-                            href={`/admin/employees/${emp.id}`}
-                            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 hover:border-green-200 transition-colors"
-                        >
+                        <Link key={emp.id} href={`/admin/employees/${emp.id}`} style={{
+                            display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none',
+                            background: 'white', borderRadius: '14px', padding: '14px',
+                            boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+                        }}>
                             {/* Avatar */}
-                            <div className="w-11 h-11 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span className="text-green-700 font-bold text-sm">
-                                    {emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
-                                </span>
+                            <div style={{
+                                width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
+                                background: emp.is_active
+                                    ? 'linear-gradient(135deg,#00A651,#059669)'
+                                    : 'linear-gradient(135deg,#9CA3AF,#6B7280)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'white', fontWeight: 800, fontSize: '16px',
+                            }}>
+                                {emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
 
                             {/* Info */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <p className="font-semibold text-gray-900 truncate">{emp.name}</p>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>{emp.name}</span>
                                     {!emp.is_active && (
-                                        <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                        <span style={{ background: '#FEE2E2', color: '#EF4444', borderRadius: '6px', padding: '1px 6px', fontSize: '10px', fontWeight: 700 }}>
                                             Inactive
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-xs text-gray-500">{emp.emp_code}</p>
+                                <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>{emp.emp_code}</div>
                             </div>
 
                             {/* Salary */}
-                            <div className="text-right flex-shrink-0">
-                                <p className="text-sm font-semibold text-gray-900">
-                                    {formatCurrency(emp.monthly_salary)}
-                                </p>
-                                <p className="text-xs text-gray-400">per month</p>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ fontWeight: 800, fontSize: '14px', color: '#00A651' }}>{formatCurrency(emp.monthly_salary)}</div>
+                                <div style={{ fontSize: '11px', color: '#9CA3AF' }}>per month</div>
                             </div>
 
-                            {/* Arrow */}
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" strokeWidth="2" className="text-gray-400 flex-shrink-0">
-                                <path d="M9 18l6-6-6-6" />
-                            </svg>
+                            <ChevronRight size={16} color="#D1D5DB" />
                         </Link>
                     ))}
                 </div>

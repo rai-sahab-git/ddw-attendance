@@ -175,3 +175,30 @@ export function calculateSalaryV2(
         overpaidAmount,
     }
 }
+
+// ── Backward-compatible fields on SalaryCalculation ──
+// Purani pages otAmount, extraDays use karti hain
+declare module '@/lib/salary-calculator' { }
+
+// ── Backward-compatible wrapper ──
+// Old call: calculateSalary(emp, records, advance, otAmt, extraAmt, paidAmt)
+export function calculateSalary(
+    employee: Employee,
+    records: { status: string }[],
+    advanceTotal: number,
+    _otAmount = 0,
+    _extraWork = 0,
+    paidAmount = 0,
+    month = 0,
+    year = 0,
+): SalaryCalculation & { otAmount: number; extraDays: number } {
+    const result = calculateSalaryV2(
+        employee, records, [], [], advanceTotal, 0, paidAmount, month, year
+    )
+    return {
+        ...result,
+        // bonusTotal = OT+extras combined — map to old field names
+        otAmount: result.bonusTotal,
+        extraDays: result.typeBreakdown.filter(t => t.amount > 0).reduce((s, t) => s + t.count, 0),
+    }
+}

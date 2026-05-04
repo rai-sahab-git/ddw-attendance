@@ -1,189 +1,155 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { Users, CalendarCheck, IndianRupee, ClipboardList, AlertCircle } from 'lucide-react'
 
-export default async function AdminDashboard() {
+export default async function DashboardPage() {
     const supabase = await createClient()
-
     const today = new Date()
     const todayStr = today.toISOString().split('T')[0]
-    const currentMonth = today.getMonth() + 1
-    const currentYear = today.getFullYear()
-    const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December']
-    const dayName = today.toLocaleDateString('en-IN', { weekday: 'long' })
-    const dateDisplay = today.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    const month = today.getMonth() + 1
+    const year = today.getFullYear()
 
-    const { count: totalEmployees } = await supabase
-        .from('employees').select('*', { count: 'exact', head: true }).eq('is_active', true)
-
-    const { data: todayAtt } = await supabase
-        .from('attendance_records').select('status').eq('date', todayStr)
+    // ── PARALLEL queries (was sequential before) ──
+    const [
+        { count: totalEmp },
+        { data: todayAtt },
+        { count: pendingReq },
+        { data: unpaidSalary },
+    ] = await Promise.all([
+        supabase.from('employees').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('attendance_records').select('employee_id, status').eq('date', todayStr),
+        supabase.from('attendance_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('monthly_salary').select('balance_amount').eq('month', month).eq('year', year).gt('balance_amount', 0),
+    ])
 
     const presentToday = todayAtt?.filter(r => ['P', '2P', 'OT', '2OT'].includes(r.status)).length ?? 0
-    const absentToday = todayAtt?.filter(r => r.status === 'A').length ?? 0
-    const total = totalEmployees ?? 0
+    const markedToday = todayAtt?.length ?? 0
+    const notMarked = Math.max(0, (totalEmp ?? 0) - markedToday)
+    const totalBalance = unpaidSalary?.reduce((s, r) => s + (r.balance_amount ?? 0), 0) ?? 0
 
-    const { count: pendingRequests } = await supabase
-        .from('attendance_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending')
-
-    const hour = today.getHours()
-    const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening'
-    const greetEmoji = hour < 12 ? '🌅' : hour < 17 ? '☀️' : '🌙'
-
-    const presentPct = total > 0 ? Math.round((presentToday / total) * 100) : 0
+    const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Greeting */}
-            <div style={{ paddingTop: '4px' }}>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#111827' }}>
-                    {greeting}! {greetEmoji}
-                </div>
-                <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>
-                    {dayName}, {dateDisplay}
-                </div>
-            </div>
-
-            {/* Today Stats Card */}
             <div style={{
-                background: 'linear-gradient(135deg, #00A651 0%, #007A3D 100%)',
-                borderRadius: '20px',
-                padding: '20px',
-                boxShadow: '0 8px 24px rgba(0,166,81,0.3)',
-                color: 'white',
+                background: 'linear-gradient(135deg,#1a1a2e,#16213e)',
+                borderRadius: '20px', padding: '20px 18px',
             }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Today's Attendance
+                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '4px' }}>
+                    {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', margin: '8px 0' }}>
-                    <div style={{ fontSize: '48px', fontWeight: 900, lineHeight: 1 }}>{presentToday}</div>
-                    <div style={{ fontSize: '20px', fontWeight: 600, opacity: 0.7, paddingBottom: '6px' }}>/ {total}</div>
+                <div style={{ color: 'white', fontWeight: 900, fontSize: '22px' }}>
+                    Good {today.getHours() < 12 ? 'Morning' : today.getHours() < 17 ? 'Afternoon' : 'Evening'} 👋
                 </div>
-
-                {/* Progress bar */}
-                <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '999px', height: '6px', marginBottom: '12px' }}>
-                    <div style={{
-                        width: `${presentPct}%`, height: '100%',
-                        background: 'white', borderRadius: '999px',
-                        transition: 'width 0.5s ease',
-                    }} />
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginTop: '4px' }}>
+                    DDW Attendance — Admin
                 </div>
 
-                <div style={{ display: 'flex', gap: '16px' }}>
-                    <div style={{
-                        background: 'rgba(255,255,255,0.15)', borderRadius: '12px',
-                        padding: '10px 16px', flex: 1, textAlign: 'center',
-                    }}>
-                        <div style={{ fontSize: '22px', fontWeight: 800 }}>{presentToday}</div>
-                        <div style={{ fontSize: '11px', opacity: 0.8 }}>Present</div>
-                    </div>
-                    <div style={{
-                        background: 'rgba(255,255,255,0.15)', borderRadius: '12px',
-                        padding: '10px 16px', flex: 1, textAlign: 'center',
-                    }}>
-                        <div style={{ fontSize: '22px', fontWeight: 800 }}>{absentToday}</div>
-                        <div style={{ fontSize: '11px', opacity: 0.8 }}>Absent</div>
-                    </div>
-                    <div style={{
-                        background: 'rgba(255,255,255,0.15)', borderRadius: '12px',
-                        padding: '10px 16px', flex: 1, textAlign: 'center',
-                    }}>
-                        <div style={{ fontSize: '22px', fontWeight: 800 }}>{total - (todayAtt?.length ?? 0)}</div>
-                        <div style={{ fontSize: '11px', opacity: 0.8 }}>Unmarked</div>
-                    </div>
+                {/* Today's quick stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '16px' }}>
+                    {[
+                        { label: 'Present', value: presentToday, color: '#34D399' },
+                        { label: 'Not Marked', value: notMarked, color: notMarked > 0 ? '#FCA5A5' : '#34D399' },
+                        { label: 'Pending Req', value: pendingReq ?? 0, color: (pendingReq ?? 0) > 0 ? '#FCD34D' : '#34D399' },
+                    ].map(({ label, value, color }) => (
+                        <div key={label} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '22px', fontWeight: 900, color }}>{value}</div>
+                            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '2px', lineHeight: 1.2 }}>{label}</div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            {/* Mark Attendance CTA */}
-            <Link href="/admin/attendance/mark" style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: 'white', borderRadius: '16px',
-                padding: '16px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                textDecoration: 'none',
-                border: '2px solid #E8F8EF',
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Pending requests alert */}
+            {(pendingReq ?? 0) > 0 && (
+                <Link href="/admin/requests" style={{ textDecoration: 'none' }}>
                     <div style={{
-                        width: '44px', height: '44px',
-                        background: '#E8F8EF', borderRadius: '12px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: '#FFFBEB', borderRadius: '14px', padding: '12px 14px',
+                        border: '1.5px solid #FDE68A',
+                        display: 'flex', alignItems: 'center', gap: '10px',
                     }}>
-                        <span style={{ fontSize: '22px' }}>✅</span>
-                    </div>
-                    <div>
-                        <div style={{ fontWeight: 700, color: '#111827', fontSize: '15px' }}>Mark Today's Attendance</div>
-                        <div style={{ fontSize: '12px', color: '#00A651', marginTop: '2px' }}>
-                            {todayAtt?.length ? `${todayAtt.length}/${total} marked` : 'Tap to start marking'}
+                        <AlertCircle size={18} color="#D97706" />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 800, fontSize: '13px', color: '#92400E' }}>
+                                {pendingReq} pending request{(pendingReq ?? 0) > 1 ? 's' : ''} to review
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#B45309', marginTop: '1px' }}>Tap to review →</div>
                         </div>
                     </div>
+                </Link>
+            )}
+
+            {/* Quick actions */}
+            <div>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: '#6B7280', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Quick Actions
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {[
+                        { href: '/admin/attendance/mark', icon: CalendarCheck, label: 'Mark Attendance', sub: 'Today\'s attendance', color: '#00A651', bg: '#F0FDF4' },
+                        { href: '/admin/salary', icon: IndianRupee, label: 'Salary Sheet', sub: `${MONTH_NAMES[month]} ${year}`, color: '#2563EB', bg: '#EFF6FF' },
+                        { href: '/admin/employees', icon: Users, label: 'Employees', sub: `${totalEmp ?? 0} active`, color: '#7C3AED', bg: '#F5F3FF' },
+                        { href: '/admin/requests', icon: ClipboardList, label: 'Requests', sub: `${pendingReq ?? 0} pending`, color: '#D97706', bg: '#FFFBEB' },
+                    ].map(({ href, icon: Icon, label, sub, color, bg }) => (
+                        <Link key={href} href={href} style={{ textDecoration: 'none' }}>
+                            <div style={{
+                                background: bg, borderRadius: '16px', padding: '16px 14px',
+                                border: `1px solid ${color}22`,
+                                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                            }}>
+                                <div style={{
+                                    width: '38px', height: '38px', borderRadius: '10px',
+                                    background: `${color}18`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    marginBottom: '10px',
+                                }}>
+                                    <Icon size={20} color={color} />
+                                </div>
+                                <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>{label}</div>
+                                <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>{sub}</div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+
+            {/* Salary balance alert */}
+            {totalBalance > 0 && (
+                <Link href="/admin/salary" style={{ textDecoration: 'none' }}>
+                    <div style={{
+                        background: '#FEF2F2', borderRadius: '14px', padding: '12px 14px',
+                        border: '1.5px solid #FECACA',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                    }}>
+                        <IndianRupee size={18} color="#EF4444" />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 800, fontSize: '13px', color: '#991B1B' }}>
+                                ₹{totalBalance.toLocaleString('en-IN')} salary balance due
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#EF4444', marginTop: '1px' }}>{MONTH_NAMES[month]} {year} — Tap to view →</div>
+                        </div>
+                    </div>
+                </Link>
+            )}
+
+            {/* Settings shortcut */}
+            <Link href="/admin/settings" style={{ textDecoration: 'none' }}>
                 <div style={{
-                    width: '32px', height: '32px',
-                    background: '#00A651', borderRadius: '10px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'white', borderRadius: '14px', padding: '14px',
+                    border: '1px solid #E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                        <path d="M9 18l6-6-6-6" />
-                    </svg>
+                    <div>
+                        <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>⚙️ Attendance Settings</div>
+                        <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                            Custom types, OT rules, salary rules
+                        </div>
+                    </div>
+                    <div style={{ fontSize: '18px', color: '#D1D5DB' }}>›</div>
                 </div>
             </Link>
-
-            {/* Quick Actions Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-
-                {[
-                    { href: '/admin/attendance', emoji: '📅', label: 'Monthly Sheet', sub: `${monthNames[currentMonth]} ${currentYear}`, bg: '#EFF6FF', accent: '#3B82F6' },
-                    { href: '/admin/employees', emoji: '👥', label: 'Employees', sub: `${total} active`, bg: '#F5F3FF', accent: '#8B5CF6' },
-                    { href: '/admin/salary', emoji: '💰', label: 'Salary', sub: `${monthNames[currentMonth]} calculation`, bg: '#FFFBEB', accent: '#F59E0B' },
-                    { href: '/admin/requests', emoji: '🔔', label: 'Requests', sub: pendingRequests ? `${pendingRequests} pending` : 'All clear', bg: pendingRequests ? '#FFF7ED' : '#F0FDF4', accent: pendingRequests ? '#F97316' : '#00A651' },
-                ].map(({ href, emoji, label, sub, bg, accent }) => (
-                    <Link key={href} href={href} style={{
-                        background: 'white', borderRadius: '16px',
-                        padding: '16px',
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                        textDecoration: 'none',
-                        border: `1px solid ${bg}`,
-                        display: 'block',
-                    }}>
-                        <div style={{
-                            width: '40px', height: '40px',
-                            background: bg, borderRadius: '12px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '20px', marginBottom: '10px',
-                        }}>
-                            {emoji}
-                        </div>
-                        <div style={{ fontWeight: 700, color: '#111827', fontSize: '14px' }}>{label}</div>
-                        <div style={{ fontSize: '11px', color: accent, marginTop: '3px', fontWeight: 600 }}>{sub}</div>
-                    </Link>
-                ))}
-            </div>
-
-            {/* Month banner */}
-            <div style={{
-                background: 'white', borderRadius: '16px',
-                padding: '14px 16px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-                <div>
-                    <div style={{ fontWeight: 700, color: '#111827', fontSize: '14px' }}>
-                        {monthNames[currentMonth]} {currentYear}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>Current billing month</div>
-                </div>
-                <Link href="/admin/salary" style={{
-                    background: '#E8F8EF', color: '#00A651',
-                    fontWeight: 700, fontSize: '12px',
-                    padding: '8px 14px', borderRadius: '10px',
-                    textDecoration: 'none',
-                }}>
-                    View Salary →
-                </Link>
-            </div>
-
         </div>
     )
 }

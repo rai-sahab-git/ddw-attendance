@@ -76,7 +76,10 @@ export default function AttendanceSettingsPage() {
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
         const { name, value } = e.target
-        setForm(prev => ({ ...prev, [name]: name === 'fixed_amount' || name === 'sort_order' ? Number(value) : value }))
+        setForm(prev => ({
+            ...prev,
+            [name]: name === 'fixed_amount' || name === 'sort_order' ? Number(value) : value,
+        }))
     }
 
     async function handleSave(e: React.FormEvent) {
@@ -123,17 +126,18 @@ export default function AttendanceSettingsPage() {
     }
 
     async function toggleActive(s: AttendanceSetting) {
+        // ✅ FIX: destructure id separately, spread remaining fields, override is_active
+        const { id, ...rest } = s
         await fetch('/api/admin/settings/attendance', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: s.id, ...s, is_active: !s.is_active }),
+            body: JSON.stringify({ id, ...rest, is_active: !s.is_active }),
         })
         fetchSettings()
     }
 
     const selectedCalcType = CALC_TYPES.find(c => c.value === form.calc_type)
 
-    // ── Styles ──
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '11px 14px', borderRadius: '10px',
         border: '1.5px solid #E5E7EB', fontSize: '14px', outline: 'none',
@@ -179,7 +183,7 @@ export default function AttendanceSettingsPage() {
                 </div>
             )}
 
-            {/* Legend card */}
+            {/* Calc type legend */}
             <div style={{ background: '#F8FAFC', borderRadius: '14px', padding: '14px', border: '1px solid #E5E7EB' }}>
                 <div style={{ fontWeight: 800, fontSize: '12px', color: '#374151', marginBottom: '8px' }}>
                     📖 Calc Type Guide
@@ -194,7 +198,7 @@ export default function AttendanceSettingsPage() {
                 </div>
             </div>
 
-            {/* Settings list */}
+            {/* List */}
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>Loading...</div>
             ) : (
@@ -207,10 +211,8 @@ export default function AttendanceSettingsPage() {
                             opacity: s.is_active ? 1 : 0.6,
                             display: 'flex', alignItems: 'center', gap: '10px',
                         }}>
-                            {/* Drag handle */}
                             <GripVertical size={16} color="#D1D5DB" style={{ flexShrink: 0 }} />
 
-                            {/* Color badge */}
                             <div style={{
                                 background: s.color, color: s.text_color,
                                 borderRadius: '8px', padding: '5px 10px',
@@ -220,29 +222,25 @@ export default function AttendanceSettingsPage() {
                                 {s.code}
                             </div>
 
-                            {/* Info */}
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                     <span style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>{s.label}</span>
                                     {s.is_system && (
-                                        <ShieldCheck size={12} color="#9CA3AF" title="System type" />
+                                        <span title="System type" aria-label="System type">
+                                            <ShieldCheck size={12} color="#9CA3AF" />
+                                        </span>
                                     )}
                                 </div>
                                 <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
                                     {CALC_TYPES.find(c => c.value === s.calc_type)?.label ?? s.calc_type}
                                     {s.calc_type === 'ot_fixed' && s.fixed_amount > 0 && (
-                                        <span style={{ color: '#F97316', marginLeft: '6px' }}>
-                                            +₹{s.fixed_amount}/day
-                                        </span>
+                                        <span style={{ color: '#F97316', marginLeft: '6px' }}>+₹{s.fixed_amount}/day</span>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Actions */}
                             <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                                {/* Toggle active */}
-                                <button onClick={() => toggleActive(s)}
-                                    title={s.is_active ? 'Disable' : 'Enable'}
+                                <button onClick={() => toggleActive(s)} title={s.is_active ? 'Disable' : 'Enable'}
                                     style={{
                                         width: '30px', height: '30px', borderRadius: '8px', border: 'none',
                                         background: s.is_active ? '#F0FDF4' : '#F3F4F6',
@@ -252,7 +250,6 @@ export default function AttendanceSettingsPage() {
                                     <Check size={14} />
                                 </button>
 
-                                {/* Edit */}
                                 <button onClick={() => openEdit(s)}
                                     style={{
                                         width: '30px', height: '30px', borderRadius: '8px', border: 'none',
@@ -262,10 +259,8 @@ export default function AttendanceSettingsPage() {
                                     <Pencil size={13} />
                                 </button>
 
-                                {/* Delete — only non-system */}
                                 {!s.is_system && (
-                                    <button onClick={() => handleDelete(s.id)}
-                                        disabled={deletingId === s.id}
+                                    <button onClick={() => handleDelete(s.id)} disabled={deletingId === s.id}
                                         style={{
                                             width: '30px', height: '30px', borderRadius: '8px', border: 'none',
                                             background: '#FEF2F2', color: '#EF4444',
@@ -280,26 +275,22 @@ export default function AttendanceSettingsPage() {
                 </div>
             )}
 
-            {/* ── Add/Edit Bottom Sheet ── */}
+            {/* Bottom sheet form */}
             {showForm && (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 999,
                     background: 'rgba(0,0,0,0.5)',
                     display: 'flex', alignItems: 'flex-end',
                 }} onClick={() => setShowForm(false)}>
-                    <div
-                        onClick={e => e.stopPropagation()}
-                        style={{
-                            width: '100%', background: 'white',
-                            borderRadius: '20px 20px 0 0', padding: '20px 16px',
-                            paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
-                            maxHeight: '90dvh', overflowY: 'auto',
-                        }}
-                    >
-                        {/* Sheet header */}
+                    <div onClick={e => e.stopPropagation()} style={{
+                        width: '100%', background: 'white',
+                        borderRadius: '20px 20px 0 0', padding: '20px 16px',
+                        paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
+                        maxHeight: '90dvh', overflowY: 'auto',
+                    }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <h2 style={{ fontWeight: 900, fontSize: '18px', margin: 0 }}>
-                                {editItem ? '✏️ Edit Attendance Type' : '➕ New Attendance Type'}
+                                {editItem ? '✏️ Edit Type' : '➕ New Attendance Type'}
                             </h2>
                             <button onClick={() => setShowForm(false)}
                                 style={{ background: '#F3F4F6', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}>
@@ -309,40 +300,31 @@ export default function AttendanceSettingsPage() {
 
                         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                            {/* Code — read only if editing */}
                             <div>
-                                <label style={labelStyle}>Code * (e.g. P, OT, NITE)</label>
-                                <input
-                                    name="code" value={form.code} onChange={handleChange}
-                                    readOnly={!!editItem}
-                                    maxLength={6}
+                                <label style={labelStyle}>Code * (max 6 chars)</label>
+                                <input name="code" value={form.code} onChange={handleChange}
+                                    readOnly={!!editItem} maxLength={6}
                                     placeholder="OT, 2P, NITE, EXTRA..."
                                     required
-                                    style={{ ...inputStyle, textTransform: 'uppercase', background: editItem ? '#F9FAFB' : 'white' }}
-                                />
-                                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>
-                                    Max 6 chars, uppercase. Used in attendance grid.
-                                </span>
+                                    style={{ ...inputStyle, textTransform: 'uppercase', background: editItem ? '#F9FAFB' : 'white' }} />
+                                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>Uppercase only. Used as cell label in grid.</span>
                             </div>
 
-                            {/* Label */}
                             <div>
                                 <label style={labelStyle}>Label *</label>
                                 <input name="label" value={form.label} onChange={handleChange}
-                                    placeholder="e.g. Night Shift, Sunday OT..."
-                                    required style={inputStyle} />
+                                    placeholder="e.g. Night Shift, Sunday OT..." required style={inputStyle} />
                             </div>
 
-                            {/* Color picker */}
                             <div>
                                 <label style={labelStyle}>Badge Color</label>
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                                     {DEFAULT_COLORS.map(c => (
-                                        <button key={c} type="button"
-                                            onClick={() => setForm(prev => ({ ...prev, color: c }))}
+                                        <button key={c} type="button" onClick={() => setForm(prev => ({ ...prev, color: c }))}
                                             style={{
-                                                width: '30px', height: '30px', borderRadius: '8px', background: c, border: 'none',
-                                                cursor: 'pointer', outline: form.color === c ? '3px solid #1a1a2e' : 'none',
+                                                width: '30px', height: '30px', borderRadius: '8px',
+                                                background: c, border: 'none', cursor: 'pointer',
+                                                outline: form.color === c ? '3px solid #1a1a2e' : 'none',
                                                 outlineOffset: '2px',
                                             }} />
                                     ))}
@@ -351,7 +333,6 @@ export default function AttendanceSettingsPage() {
                                     <input type="color" name="color" value={form.color} onChange={handleChange}
                                         style={{ width: '44px', height: '36px', borderRadius: '8px', border: '1px solid #E5E7EB', cursor: 'pointer', padding: '2px' }} />
                                     <span style={{ fontSize: '12px', color: '#6B7280' }}>Custom color</span>
-                                    {/* Preview */}
                                     <div style={{
                                         background: form.color, color: form.text_color,
                                         borderRadius: '8px', padding: '5px 12px',
@@ -362,7 +343,6 @@ export default function AttendanceSettingsPage() {
                                 </div>
                             </div>
 
-                            {/* Text color */}
                             <div>
                                 <label style={labelStyle}>Text Color</label>
                                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -381,7 +361,6 @@ export default function AttendanceSettingsPage() {
                                 </div>
                             </div>
 
-                            {/* Calc type */}
                             <div>
                                 <label style={labelStyle}>Salary Calculation *</label>
                                 <select name="calc_type" value={form.calc_type} onChange={handleChange}
@@ -397,26 +376,22 @@ export default function AttendanceSettingsPage() {
                                 )}
                             </div>
 
-                            {/* Fixed amount — only for ot_fixed */}
                             {form.calc_type === 'ot_fixed' && (
                                 <div>
                                     <label style={labelStyle}>Fixed OT Amount per Day (₹)</label>
                                     <input name="fixed_amount" type="number" min="0" step="0.01"
                                         value={form.fixed_amount} onChange={handleChange}
-                                        placeholder="e.g. 150"
-                                        style={inputStyle} />
+                                        placeholder="e.g. 150" style={inputStyle} />
                                     <span style={{ fontSize: '11px', color: '#9CA3AF' }}>
-                                        Yeh amount salary mein add hogi jab bhi yeh status lagao
+                                        Yeh amount salary mein auto add hogi
                                     </span>
                                 </div>
                             )}
 
-                            {/* Sort order */}
                             <div>
-                                <label style={labelStyle}>Display Order (lower = first)</label>
+                                <label style={labelStyle}>Display Order</label>
                                 <input name="sort_order" type="number" min="1"
-                                    value={form.sort_order} onChange={handleChange}
-                                    style={inputStyle} />
+                                    value={form.sort_order} onChange={handleChange} style={inputStyle} />
                             </div>
 
                             {msg && (

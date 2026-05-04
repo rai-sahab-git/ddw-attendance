@@ -1,125 +1,174 @@
-import type { AttendanceRecord, Employee } from '@/types'
+import type { Employee } from '@/types'
+
+export interface AttendanceTypeSetting {
+    code: string
+    calc_type: string   // present | absent | half | ot_fixed | per_day_multiply | no_effect
+    fixed_amount: number
+    multiplier: number
+}
+
+export interface EmployeeOverride {
+    type_code: string
+    override_amount: number | null
+    override_multiplier: number | null
+}
 
 export interface SalaryCalculation {
     employee: Employee
     month: number
     year: number
     totalWorkingDays: number
+    perDay: number
     presentDays: number
     absentDays: number
     halfDays: number
-    extraDays: number   // 2P / 2OT days
-    otAmount: number
-    extraWorkAmount: number
+    // Per-type breakdown
+    typeBreakdown: { code: string; label: string; count: number; amount: number }[]
     absentDeduction: number
     halfdayDeduction: number
-    extraDayPay: number
+    bonusTotal: number   // OT + 2P + all extras
     grossEarning: number
     advanceTotal: number
+    otherDeductions: number
     payableAmount: number
     paidAmount: number
     balanceAmount: number
-    overpaidAmount: number   // agar paid > payable
+    overpaidAmount: number
 }
 
-export function calculateSalary(
+export function calculateSalaryV2(
     employee: Employee,
-    records: AttendanceRecord[],
+    records: { status: string }[],
+    settings: AttendanceTypeSetting[],
+    overrides: EmployeeOverride[],
     advanceTotal: number,
-    otAmount: number,
-    extraWorkAmount: number,
+    otherDeductions: number,
     paidAmount: number,
-    totalWorkingDays: number = 26,
-    month: number = 0,
-    year: number = 0,
+    month = 0,
+    year = 0,
 ): SalaryCalculation {
+    const WORKING_DAYS = 26
+    const perDay = employee.monthly_salary / WORKING_DAYS
 
-    const perDay = employee.per_day_rate ?? (employee.monthly_salary / totalWorkingDays)
+    // Helper — get effective rate for this employee
+    function getEffectiveAmount(code: string, setting: AttendanceTypeSetting): number {
+        const ov = overrides.find(o => o.type_code === code)
+        if (ov?.override_amount != null) return ov.override_amount
+        return setting.fixed_amount
+    }
+
+    function getEffectiveMultiplier(code: string, setting: AttendanceTypeSetting): number {
+        const ov = overrides.find(o => o.type_code === code)
+        if (ov?.override_multiplier != null) return ov.override_multiplier
+        return setting.multiplier
+    }
+
+    // Count each status code
+    const countMap: Record<string, number> = {}
+    records.forEach(r => {
+        countMap[r.status] = (countMap[r.status] ?? 0) + 1
+    })
 
     let presentDays = 0
     let absentDays = 0
     let halfDays = 0
-    let extraDays = 0  // 2P / 2OT bonus days
+    let absentDeduction = 0
+    let halfdayDeduction = 0
+    let bonusTotal = 0
+    const typeBreakdown: SalaryCalculation['typeBreakdown'] = []
 
-    records.forEach(r => {
-        switch (r.status) {
-            case 'P':
-                presentDays += 1
+    Object.entries(countMap).forEach(([code, count]) => {
+        const setting = settings.find(s => s.code === code)
+        if (!setting) return  // unknown code — skip
+
+        let amount = 0
+
+        switch (setting.calc_type) {
+            case 'present':
+                // Normal present — no change to salary
+                presentDays += count
+                amount = 0
                 break
-            case '2P':
-                presentDays += 1
-                extraDays += 1   // 1 bonus day
+
+            case 'absent':
+                // Deduct perDay per occurrence
+                absentDays += count
+                absentDeduction += count * perDay
+                amount = -(count * perDay)
                 break
-            case 'OT':
-                presentDays += 1   // present — OT amount alag milta hai
+
+            case 'half':
+                // Deduct half perDay
+                halfDays += count
+                halfdayDeduction += count * (perDay / 2)
+                amount = -(count * (perDay / 2))
                 break
-            case '2OT':
-                presentDays += 1
-                extraDays += 1   // 1 bonus day
+
+            case 'ot_fixed': {
+                // Add flat fixed_amount per occurrence (employee override respected)
+                const rate = getEffectiveAmount(code, setting)
+                const bonus = count * rate
+                bonusTotal += bonus
+                presentDays += count  // OT day = present
+                amount = bonus
                 break
-            case 'A':
-            case 'L':
-                absentDays += 1
+            }
+
+            case 'per_day_multiply': {
+                // e.g. 2P → employee worked extra, bonus = (multiplier - 1) * perDay
+                // multiplier=2 means: full day pay + 1 bonus day = perDay extra
+                const mult = getEffectiveMultiplier(code, setting)
+                const bonus = count * (mult - 1) * perDay
+                bonusTotal += bonus
+                presentDays += count
+                amount = bonus
                 break
-            case 'H':
-                halfDays += 1
+            }
+
+            case 'no_effect':
+            default:
+                // WO, HD — no change
                 break
-            case 'HD': break  // holiday — no deduction, no addition
-            case 'WO': break  // week off — no deduction, no addition
+        }
+
+        if (count > 0) {
+            typeBreakdown.push({
+                code,
+                label: setting.code,
+                count,
+                amount,
+            })
         }
     })
 
-    // ─── CORRECT FORMULA ───────────────────────────────────────────
-    // Base = full monthly salary
-    // Deduct absent days (full day) and half days (half day)
-    // Add bonus for extra days (2P/2OT) — employee zyada kaam kiya
-    // Add OT amount (manual entry from salary edit)
-    // Add extra work amount (manual entry)
-    //
-    // NOTE: presentDays * perDay is NOT used directly because
-    // monthly salary already assumes full attendance.
-    // We only deduct for absences and add for extras.
-    // ───────────────────────────────────────────────────────────────
-
-    const absentDeduction = absentDays * perDay
-    const halfdayDeduction = halfDays * (perDay / 2)
-    const extraDayPay = extraDays * perDay   // bonus for 2P/2OT
-
-    const grossEarning =
+    const grossEarning = Math.max(
+        0,
         employee.monthly_salary
         - absentDeduction
         - halfdayDeduction
-        + extraDayPay
-        + otAmount
-        + extraWorkAmount
+        + bonusTotal
+    )
 
-    // Gross can't be negative
-    const safeGross = Math.max(0, grossEarning)
-
-    // Payable = gross - advance
-    const payableAmount = Math.max(0, safeGross - advanceTotal)
-
-    // Balance / overpaid
+    const payableAmount = Math.max(0, grossEarning - advanceTotal - otherDeductions)
     const diff = payableAmount - paidAmount
-    const balanceAmount = Math.max(0, diff)   // still to pay
-    const overpaidAmount = Math.max(0, -diff)   // paid more than payable
+    const balanceAmount = Math.max(0, diff)
+    const overpaidAmount = Math.max(0, -diff)
 
     return {
         employee,
-        month,
-        year,
-        totalWorkingDays,
+        month, year,
+        totalWorkingDays: WORKING_DAYS,
+        perDay,
         presentDays,
         absentDays,
         halfDays,
-        extraDays,
-        otAmount,
-        extraWorkAmount,
+        typeBreakdown,
         absentDeduction,
         halfdayDeduction,
-        extraDayPay,
-        grossEarning: safeGross,
+        bonusTotal,
+        grossEarning,
         advanceTotal,
+        otherDeductions,
         payableAmount,
         paidAmount,
         balanceAmount,

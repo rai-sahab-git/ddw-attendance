@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { calculateSalaryV2 } from '@/lib/salary-calculator'
 
-const supabase = createClient(
+const supa = () => createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// POST /api/admin/salary/[empId] — upsert monthly salary record
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ empId: string }> }
@@ -14,74 +14,77 @@ export async function POST(
     try {
         const { empId } = await params
         const body = await request.json()
-        const { month, year, ot_amount, extra_work_amount, other_deductions, paid_amount } = body
+        const { month, year, other_deductions, paid_amount } = body
 
         if (!month || !year) {
             return NextResponse.json({ error: 'month and year required' }, { status: 400 })
         }
 
-        // Get current attendance + employee to compute all fields
-        const [{ data: employee }, { data: attendance }, { data: advances }] = await Promise.all([
-            supabase.from('employees').select('*').eq('id', empId).single(),
-            supabase.from('attendance_records').select('*').eq('employee_id', empId).eq('month', month).eq('year', year),
-            supabase.from('advance_payments').select('*').eq('employee_id', empId).eq('deduct_month', month).eq('deduct_year', year),
+        // Fetch everything in parallel
+        const [
+            { data: employee },
+            { data: attendance },
+            { data: advances },
+            { data: settings },
+            { data: overrides },
+        ] = await Promise.all([
+            supa().from('employees').select('*').eq('id', empId).single(),
+            supa().from('attendance_records').select('*').eq('employee_id', empId).eq('month', month).eq('year', year),
+            supa().from('advance_payments').select('*').eq('employee_id', empId).eq('deduct_month', month).eq('deduct_year', year),
+            supa().from('attendance_settings').select('*').eq('is_active', true),
+            supa().from('employee_type_overrides').select('*').eq('employee_id', empId),
         ])
 
         if (!employee) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
 
         const advanceTotal = advances?.reduce((s: number, a: any) => s + a.amount, 0) ?? 0
 
-        // Compute attendance stats
-        let presentDays = 0, absentDays = 0, halfDays = 0, extraDays = 0
-        attendance?.forEach((r: any) => {
-            switch (r.status) {
-                case 'P': presentDays += 1; break
-                case '2P': presentDays += 1; extraDays += 1; break
-                case 'OT': presentDays += 1; break
-                case '2OT': presentDays += 1; extraDays += 1; break
-                case 'A': absentDays += 1; break
-                case 'H': halfDays += 1; break
-                case 'L': absentDays += 1; break
-            }
-        })
+        const salary = calculateSalaryV2(
+            employee,
+            (attendance ?? []) as any,
+            (settings ?? []) as any,
+            (overrides ?? []) as any,
+            advanceTotal,
+            other_deductions ?? 0,
+            paid_amount ?? 0,
+            month,
+            year,
+        )
 
-        const perDay = employee.per_day_rate
-        const absentDeduction = absentDays * perDay
-        const halfdayDeduction = halfDays * (perDay / 2)
-        const extraDayPay = extraDays * perDay
-        const grossEarning = (presentDays * perDay) + (ot_amount || 0) + (extra_work_amount || 0) + extraDayPay
-        const payableAmount = Math.max(0, grossEarning - absentDeduction - halfdayDeduction - advanceTotal - (other_deductions || 0))
-        const balanceAmount = payableAmount - (paid_amount || 0)
+        // Build bonus_breakdown JSON for storage
+        const bonusBreakdown = salary.typeBreakdown
+            .filter(t => t.amount > 0)
+            .map(t => ({ code: t.code, count: t.count, amount: t.amount }))
 
         const record = {
             employee_id: empId,
-            month,
-            year,
+            month, year,
             total_working_days: 26,
-            present_days: presentDays,
-            absent_days: absentDays,
-            half_days: halfDays,
-            extra_days: extraDays,
+            present_days: salary.presentDays,
+            absent_days: salary.absentDays,
+            half_days: salary.halfDays,
+            extra_days: 0,
             base_salary: employee.monthly_salary,
-            per_day_rate: perDay,
-            absent_deduction: absentDeduction,
-            halfday_deduction: halfdayDeduction,
-            ot_amount: ot_amount || 0,
-            extra_work_amount: extra_work_amount || 0,
-            advance_total: advanceTotal,
-            other_deductions: other_deductions || 0,
-            gross_earning: grossEarning,
-            payable_amount: payableAmount,
-            paid_amount: paid_amount || 0,
-            balance_amount: balanceAmount,
+            per_day_rate: salary.perDay,
+            absent_deduction: salary.absentDeduction,
+            halfday_deduction: salary.halfdayDeduction,
+            ot_amount: salary.bonusTotal,
+            extra_work_amount: 0,
+            advance_total: salary.advanceTotal,
+            other_deductions: salary.otherDeductions,
+            gross_earning: salary.grossEarning,
+            payable_amount: salary.payableAmount,
+            paid_amount: salary.paidAmount,
+            balance_amount: salary.balanceAmount,
         }
 
-        const { error } = await supabase
+        const { error } = await supa()
             .from('monthly_salary')
             .upsert(record, { onConflict: 'employee_id,month,year' })
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-        return NextResponse.json({ success: true })
+
+        return NextResponse.json({ success: true, salary })
     } catch (err) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 })
     }

@@ -84,7 +84,12 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                     position: 'fixed', inset: 0, zIndex: 50,
                     background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                 }} onClick={() => setActionItem(null)}>
-                    <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '20px', width: '100%', maxWidth: '480px' }}
+                    <div style={{
+                        background: 'white', borderRadius: '20px 20px 0 0', padding: '20px',
+                        width: '100%', maxWidth: '480px',
+                        maxHeight: '85vh',        // ✅ screen ka 85% se zyada nahi jaayega
+                        overflowY: 'auto',        // ✅ scroll enable
+                    }}
                         onClick={e => e.stopPropagation()}>
 
                         {/* Request Summary */}

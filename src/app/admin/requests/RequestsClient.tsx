@@ -87,6 +87,7 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                     <div style={{
                         background: 'white', borderRadius: '20px 20px 0 0', padding: '20px',
                         width: '100%', maxWidth: '480px',
+                        paddingBottom: '90px',
                         maxHeight: '85vh',        // ✅ screen ka 85% se zyada nahi jaayega
                         overflowY: 'auto',        // ✅ scroll enable
                     }}

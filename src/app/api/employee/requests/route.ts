@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
             employee_id: emp.id,
             request_type,
             date,
+            date_from: date,           // ✅ YEH LINE ADD KARO
             requested_status: requested_status || null,
             reason: reason || null,
             status: 'pending',

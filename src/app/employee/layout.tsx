@@ -50,7 +50,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                             </div>
                         </div>
                     </div>
-                    <button onClick={handleLogout} style={{
+                    <button onClick={handleLogout} aria-label="Log out" style={{
                         width: '36px', height: '36px',
                         background: 'rgba(255,255,255,0.1)',
                         borderRadius: '10px', border: 'none', cursor: 'pointer',
@@ -66,7 +66,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                 {children}
             </main>
 
-            <nav style={{
+            <nav aria-label="Employee navigation" style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0,
                 background: 'white', borderTop: '1px solid #E5E7EB',
                 boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
@@ -76,7 +76,10 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                     {navItems.map(({ href, icon: Icon, label }) => {
                         const active = pathname === href || pathname.startsWith(href + '/')
                         return (
-                            <Link key={href} href={href} style={{
+                            <Link key={href} href={href}
+                                aria-current={active ? 'page' : undefined}
+                                aria-label={label}
+                                style={{
                                 display: 'flex', flexDirection: 'column',
                                 alignItems: 'center', gap: '3px',
                                 padding: '10px 12px',

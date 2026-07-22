@@ -19,18 +19,51 @@ export default async function SalaryPage({
     const prevDate = new Date(year, month - 2, 1)
     const nextDate = new Date(year, month, 1)
 
-    const [{ data: employees }, { data: attendance }, { data: advances }, { data: salaryRecords }] = await Promise.all([
+    const [
+        { data: employees },
+        { data: attendance },
+        { data: advances },
+        { data: salaryRecords },
+        { data: settings },
+        { data: allOverrides },
+    ] = await Promise.all([
         supabase.from('employees').select('*').eq('is_active', true).order('emp_code'),
         supabase.from('attendance_records').select('*').eq('month', month).eq('year', year),
         supabase.from('advance_payments').select('*').eq('deduct_month', month).eq('deduct_year', year),
         supabase.from('monthly_salary').select('*').eq('month', month).eq('year', year),
+        supabase.from('attendance_settings').select('*').eq('is_active', true),
+        supabase.from('employee_type_overrides').select('*'),
     ])
+
+    const settingsList = (settings ?? []).map(s => ({
+        code: s.code,
+        calc_type: s.calc_type,
+        fixed_amount: s.fixed_amount ?? 0,
+        multiplier: s.multiplier ?? 1,
+    }))
 
     const summaries = employees?.map(emp => {
         const empAttendance = attendance?.filter(a => a.employee_id === emp.id) ?? []
         const empAdvance = advances?.filter(a => a.employee_id === emp.id).reduce((sum, a) => sum + a.amount, 0) ?? 0
         const savedRecord = salaryRecords?.find(s => s.employee_id === emp.id)
-        return calculateSalary(emp, empAttendance as any, empAdvance, savedRecord?.ot_amount ?? 0, savedRecord?.extra_work_amount ?? 0, savedRecord?.paid_amount ?? 0)
+        const empOverrides = (allOverrides ?? [])
+            .filter(o => o.employee_id === emp.id)
+            .map(o => ({
+                type_code: o.type_code,
+                override_amount: o.override_amount,
+                override_multiplier: o.override_multiplier,
+            }))
+        return calculateSalary(
+            emp,
+            empAttendance,
+            empAdvance,
+            settingsList,
+            empOverrides,
+            savedRecord?.paid_amount ?? 0,
+            month,
+            year,
+            savedRecord?.other_deductions ?? 0,
+        )
     }) ?? []
 
     const totalPayable = summaries.reduce((s, r) => s + r.payableAmount, 0)
@@ -129,9 +162,9 @@ export default async function SalaryPage({
                                     {[
                                         { label: 'Base', value: formatCurrency(s.employee.monthly_salary), color: '#6B7280' },
                                         { label: 'Deduction', value: `-${formatCurrency(s.absentDeduction + s.halfdayDeduction)}`, color: '#EF4444' },
-                                        s.otAmount > 0 && { label: 'OT', value: `+${formatCurrency(s.otAmount)}`, color: '#F97316' },
-                                        s.advanceTotal > 0 && { label: 'Advance', value: `-${formatCurrency(s.advanceTotal)}`, color: '#8B5CF6' },
-                                    ].filter(Boolean).map((item: any) => (
+                                        ...(s.otAmount > 0 ? [{ label: 'OT', value: `+${formatCurrency(s.otAmount)}`, color: '#F97316' }] : []),
+                                        ...(s.advanceTotal > 0 ? [{ label: 'Advance', value: `-${formatCurrency(s.advanceTotal)}`, color: '#8B5CF6' }] : []),
+                                    ].map((item) => (
                                         <span key={item.label} style={{ fontSize: '11px', color: item.color, background: '#F9FAFB', borderRadius: '6px', padding: '2px 8px' }}>
                                             {item.label}: {item.value}
                                         </span>

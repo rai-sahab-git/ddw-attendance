@@ -383,7 +383,7 @@ export default function AttendanceSettingsPage() {
                                         value={form.fixed_amount} onChange={handleChange}
                                         placeholder="e.g. 150" style={inputStyle} />
                                     <span style={{ fontSize: '11px', color: '#9CA3AF' }}>
-                                        Yeh amount salary mein auto add hogi
+                                        This amount is added to salary automatically
                                     </span>
                                 </div>
                             )}

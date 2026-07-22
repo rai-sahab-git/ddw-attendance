@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdminAuth } from '@/lib/api-auth'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,9 @@ const supabase = createClient(
 
 // POST /api/admin/advance — add new advance record
 export async function POST(request: NextRequest) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     try {
         const body = await request.json()
         const { employee_id, amount, date, description, deduct_month, deduct_year } = body
@@ -35,6 +39,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/admin/advance?id=xxx — delete advance record
 export async function DELETE(request: NextRequest) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     try {
         const id = request.nextUrl.searchParams.get('id')
         if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })

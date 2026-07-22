@@ -1,15 +1,6 @@
 export type UserRole = 'admin' | 'employee'
 
-export type AttendanceStatus =
-    | 'P'   // Present
-    | '2P'  // Double Present
-    | 'A'   // Absent
-    | 'H'   // Half Day
-    | 'OT'  // Overtime
-    | '2OT' // Double OT
-    | 'L'   // Leave
-    | 'HD'  // Holiday
-    | 'WO'  // Week Off
+export type AttendanceStatus = string
 
 export interface Employee {
     id: string
@@ -18,8 +9,9 @@ export interface Employee {
     phone?: string
     monthly_salary: number
     per_day_rate: number
-    pin?: string   // ✅ optional — renamed to login_pin in DB
-    login_pin?: string   // ✅ actual DB column name
+    /** @deprecated use has_pin from API — PIN never returned to clients */
+    login_pin?: string
+    has_pin?: boolean
     joining_date: string
     is_active: boolean
 }

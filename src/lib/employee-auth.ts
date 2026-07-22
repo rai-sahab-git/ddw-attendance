@@ -10,7 +10,6 @@ export type EmployeeSession = {
     is_active: boolean
     phone?: string
     joining_date?: string
-    login_pin?: string
 }
 
 export async function getEmployeeSession(): Promise<EmployeeSession | null> {
@@ -19,7 +18,6 @@ export async function getEmployeeSession(): Promise<EmployeeSession | null> {
         const token = cookieStore.get('emp_session')?.value
         if (!token) return null
 
-        // ✅ Service role client — bypasses RLS
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -31,7 +29,7 @@ export async function getEmployeeSession(): Promise<EmployeeSession | null> {
         expires_at,
         employees (
           id, name, emp_code, monthly_salary,
-          per_day_rate, is_active, phone, joining_date, login_pin
+          per_day_rate, is_active, phone, joining_date
         )
       `)
             .eq('token', token)
@@ -40,7 +38,8 @@ export async function getEmployeeSession(): Promise<EmployeeSession | null> {
 
         if (!session?.employees) return null
         return session.employees as unknown as EmployeeSession
-    } catch {
+    } catch (err) {
+        console.error('getEmployeeSession error:', err)
         return null
     }
 }

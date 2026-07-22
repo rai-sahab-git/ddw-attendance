@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 import { cookies } from 'next/headers'
+import { hashPin, isPinHashed, verifyPin } from '@/lib/pin'
+import { checkRateLimit, resetRateLimit } from '@/lib/rate-limit'
+
+const LOGIN_LIMIT = 5
+const LOGIN_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,7 +16,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Employee ID and PIN are required' }, { status: 400 })
         }
 
-        // ✅ Service role client — bypasses RLS
+        const code = emp_code.trim().toUpperCase()
+        const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+            || request.headers.get('x-real-ip')
+            || 'unknown'
+        const rateKey = `emp-login:${ip}:${code}`
+
+        const limited = checkRateLimit(rateKey, LOGIN_LIMIT, LOGIN_WINDOW_MS)
+        if (!limited.allowed) {
+            return NextResponse.json(
+                { error: `Too many attempts. Try again in ${limited.retryAfterSec}s.` },
+                { status: 429, headers: { 'Retry-After': String(limited.retryAfterSec) } },
+            )
+        }
+
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -20,7 +38,7 @@ export async function POST(request: NextRequest) {
         const { data: employee, error } = await supabase
             .from('employees')
             .select('id, name, emp_code, is_active, login_pin')
-            .eq('emp_code', emp_code.trim().toUpperCase())
+            .eq('emp_code', code)
             .single()
 
         if (error || !employee) {
@@ -31,13 +49,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Your account is inactive. Contact admin.' }, { status: 401 })
         }
 
-        if (String(employee.login_pin).trim() !== String(pin).trim()) {
+        const ok = await verifyPin(pin, employee.login_pin)
+        if (!ok) {
             return NextResponse.json({ error: 'Invalid Employee ID or PIN' }, { status: 401 })
         }
 
-        // ✅ Create session token
+        // Migrate legacy plaintext PIN to bcrypt on successful login
+        if (employee.login_pin && !isPinHashed(employee.login_pin)) {
+            const hashed = await hashPin(pin)
+            await supabase.from('employees').update({ login_pin: hashed }).eq('id', employee.id)
+        }
+
+        resetRateLimit(rateKey)
+
         const token = randomUUID()
-        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
         await supabase.from('employee_sessions').insert({
             employee_id: employee.id,
@@ -45,7 +71,6 @@ export async function POST(request: NextRequest) {
             expires_at: expiresAt.toISOString(),
         })
 
-        // ✅ Set cookie
         const cookieStore = await cookies()
         cookieStore.set('emp_session', token, {
             httpOnly: true,

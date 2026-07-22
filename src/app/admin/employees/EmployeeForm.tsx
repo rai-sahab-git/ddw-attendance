@@ -22,7 +22,7 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
         monthly_salary: String(employee?.monthly_salary ?? ''),
         per_day_rate: String(employee?.per_day_rate ?? ''),
         joining_date: employee?.joining_date ?? new Date().toISOString().split('T')[0],
-        login_pin: employee?.login_pin ?? '',
+        login_pin: '',
         is_active: employee?.is_active ?? true,
     })
 
@@ -46,10 +46,22 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
         setSaving(true)
         setMsg('')
         try {
-            const payload = {
-                ...form,
+            const payload: Record<string, unknown> = {
+                name: form.name,
+                emp_code: form.emp_code,
+                phone: form.phone,
                 monthly_salary: parseFloat(form.monthly_salary) || 0,
                 per_day_rate: parseFloat(form.per_day_rate) || 0,
+                joining_date: form.joining_date,
+                is_active: form.is_active,
+            }
+            // Only send PIN when set (on edit, blank = keep existing)
+            if (form.login_pin.trim()) {
+                payload.login_pin = form.login_pin.trim()
+            } else if (isNew) {
+                setMsg('❌ A 4-digit PIN is required')
+                setSaving(false)
+                return
             }
             const url = isNew ? '/api/admin/employees' : `/api/admin/employees/${employee?.id}`
             const method = isNew ? 'POST' : 'PUT'
@@ -91,7 +103,7 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '12px 14px', borderRadius: '10px',
         border: '1.5px solid #E5E7EB', fontSize: '14px', color: '#111827',
-        background: 'white', outline: 'none', boxSizing: 'border-box',
+        background: 'white', boxSizing: 'border-box',
     }
     const labelStyle: React.CSSProperties = {
         display: 'block', fontWeight: 700, fontSize: '12px', color: '#374151',
@@ -106,9 +118,9 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                     onClick={() => setShowDelete(false)}>
                     <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '480px' }}
                         onClick={e => e.stopPropagation()}>
-                        <div style={{ fontWeight: 800, fontSize: '16px', color: '#111827', marginBottom: '8px', textAlign: 'center' }}>Delete Employee?</div>
+                        <div style={{ fontWeight: 800, fontSize: '16px', color: '#111827', marginBottom: '8px', textAlign: 'center' }}>Deactivate Employee?</div>
                         <div style={{ fontSize: '13px', color: '#6B7280', textAlign: 'center', marginBottom: '20px' }}>
-                            This will permanently delete <strong>{employee?.name}</strong> and all related records.
+                            <strong>{employee?.name}</strong> will be marked inactive and hidden from attendance. History is kept.
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <button onClick={() => setShowDelete(false)}
@@ -117,7 +129,7 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                             </button>
                             <button onClick={handleDelete} disabled={deleting}
                                 style={{ padding: '13px', borderRadius: '12px', background: '#EF4444', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '14px' }}>
-                                {deleting ? 'Deleting...' : 'Yes, Delete'}
+                                {deleting ? 'Deactivating...' : 'Yes, Deactivate'}
                             </button>
                         </div>
                     </div>
@@ -134,27 +146,27 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div>
-                            <label style={labelStyle}>Full Name *</label>
-                            <input name="name" required value={form.name} onChange={handleChange}
+                            <label htmlFor="emp-name" style={labelStyle}>Full Name *</label>
+                            <input id="emp-name" name="name" required value={form.name} onChange={handleChange}
                                 placeholder="e.g. Ramesh Kumar" style={inputStyle} />
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <div>
-                                <label style={labelStyle}>Emp Code *</label>
-                                <input name="emp_code" required value={form.emp_code} onChange={handleChange}
+                                <label htmlFor="emp-code" style={labelStyle}>Emp Code *</label>
+                                <input id="emp-code" name="emp_code" required value={form.emp_code} onChange={handleChange}
                                     placeholder="DDW001" style={inputStyle} />
                             </div>
                             <div>
-                                <label style={labelStyle}>Phone</label>
-                                <input name="phone" type="tel" value={form.phone} onChange={handleChange}
+                                <label htmlFor="emp-phone" style={labelStyle}>Phone</label>
+                                <input id="emp-phone" name="phone" type="tel" value={form.phone} onChange={handleChange}
                                     placeholder="9876543210" style={inputStyle} />
                             </div>
                         </div>
 
                         <div>
-                            <label style={labelStyle}>Joining Date *</label>
-                            <input name="joining_date" type="date" required value={form.joining_date} onChange={handleChange}
+                            <label htmlFor="emp-joining" style={labelStyle}>Joining Date *</label>
+                            <input id="emp-joining" name="joining_date" type="date" required value={form.joining_date} onChange={handleChange}
                                 style={inputStyle} />
                         </div>
                     </div>
@@ -188,11 +200,24 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                         Employee Login
                     </div>
                     <div>
-                        <label style={labelStyle}>4-Digit PIN</label>
-                        <input name="login_pin" type="password" inputMode="numeric" maxLength={4} minLength={4}
-                            value={form.login_pin} onChange={handleChange} placeholder="e.g. 1234" style={inputStyle} />
+                        <label htmlFor="login_pin" style={labelStyle}>4-Digit PIN</label>
+                        <input
+                            id="login_pin"
+                            name="login_pin"
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={4}
+                            minLength={isNew ? 4 : undefined}
+                            required={isNew}
+                            value={form.login_pin}
+                            onChange={handleChange}
+                            placeholder={isNew ? 'e.g. 1234' : 'Leave blank to keep current'}
+                            style={inputStyle}
+                        />
                         <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
-                            Employee uses this PIN to login on their portal
+                            {isNew
+                                ? 'Employee uses this PIN to login on their portal'
+                                : 'Leave blank to keep the existing PIN. Enter a new PIN only to change it.'}
                         </div>
                     </div>
                 </div>
@@ -248,7 +273,7 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                             width: '100%', padding: '14px', borderRadius: '14px', border: '1.5px solid #FCA5A5',
                             background: 'white', color: '#EF4444', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
                         }}>
-                        🗑️ Delete Employee
+                        Deactivate Employee
                     </button>
                 )}
             </form>

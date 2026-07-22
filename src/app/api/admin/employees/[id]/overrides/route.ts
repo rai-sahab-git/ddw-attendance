@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdminAuth } from '@/lib/api-auth'
 
 const supa = () => createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,9 @@ export async function GET(
     _req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     const { id } = await params
     const { data, error } = await supa()
         .from('employee_type_overrides')
@@ -26,6 +30,9 @@ export async function POST(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     const { id } = await params
     const body = await req.json()
     const { type_code, override_amount, override_multiplier } = body
@@ -48,6 +55,9 @@ export async function DELETE(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     const { id } = await params
     const { type_code } = await req.json()
 

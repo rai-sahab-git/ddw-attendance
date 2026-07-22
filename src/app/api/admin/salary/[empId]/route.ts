@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { calculateSalaryV2 } from '@/lib/salary-calculator'
+import { requireAdminAuth } from '@/lib/api-auth'
 
 const supa = () => createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,9 @@ export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ empId: string }> }
 ) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     try {
         const { empId } = await params
         const body = await request.json()

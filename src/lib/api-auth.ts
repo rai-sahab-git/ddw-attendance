@@ -18,8 +18,24 @@ export async function requireAdminAuth(): Promise<NextResponse | null> {
                 { status: 401 }
             )
         }
-        return null  // null means auth passed
-    } catch {
+
+        const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        // If no profile row, treat authenticated session as admin (legacy installs)
+        if (profile && profile.role !== 'admin') {
+            return NextResponse.json(
+                { error: 'Forbidden — admin access required' },
+                { status: 403 }
+            )
+        }
+
+        return null
+    } catch (err) {
+        console.error('requireAdminAuth error:', err)
         return NextResponse.json(
             { error: 'Auth check failed' },
             { status: 500 }

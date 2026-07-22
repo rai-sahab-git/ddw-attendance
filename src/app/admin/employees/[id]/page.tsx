@@ -57,7 +57,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     async function saveOverride(code: string, field: 'amount' | 'multiplier', value: string) {
         if (!empId) return
         const num = parseFloat(value)
-        if (isNaN(num) || num < 0) { setMsg('❌ Valid number daalo'); return }
+        if (isNaN(num) || num < 0) { setMsg('Enter a valid number'); return }
         setSavingCode(code)
         const body: any = { type_code: code }
         if (field === 'amount') body.override_amount = num
@@ -144,7 +144,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                             ℹ️ Per-Employee Rate Override
                         </div>
                         <div style={{ fontSize: '12px', color: '#047857', lineHeight: 1.6 }}>
-                            Global rates Settings se aate hain. Iss employee ke liye alag rate chahiye toh yahan set karo.<br />
+                            Global rates come from Settings. Set a different rate here only for this employee.<br />
                             <strong>Per Day: ₹{perDay.toFixed(2)}</strong> (₹{employee.monthly_salary.toLocaleString('en-IN')} ÷ 26)
                         </div>
                     </div>
@@ -159,7 +159,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
                     {settings.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '30px', color: '#9CA3AF', fontSize: '13px' }}>
-                            Koi OT/Bonus type nahi hai.{' '}
+                            No OT/Bonus types configured.{' '}
                             <Link href="/admin/settings" style={{ color: '#00A651', fontWeight: 700 }}>
                                 Settings → Add Type
                             </Link>

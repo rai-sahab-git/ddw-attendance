@@ -1,12 +1,11 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { AttendanceStatus } from '@/types'
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-export const ATTENDANCE_COLORS: Record<AttendanceStatus, string> = {
+export const ATTENDANCE_COLORS: Record<string, string> = {
     'P': 'bg-green-500 text-white',
     '2P': 'bg-blue-500 text-white',
     'A': 'bg-red-500 text-white',
@@ -18,7 +17,7 @@ export const ATTENDANCE_COLORS: Record<AttendanceStatus, string> = {
     'WO': 'bg-gray-300 text-gray-700',
 }
 
-export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
+export const ATTENDANCE_LABELS: Record<string, string> = {
     'P': 'Present',
     '2P': 'Double Present',
     'A': 'Absent',

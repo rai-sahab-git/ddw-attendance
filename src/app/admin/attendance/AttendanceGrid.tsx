@@ -1,6 +1,12 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Save, AlertTriangle } from 'lucide-react'
+import {
+    type AttendanceStatusOption,
+    buildStatusCycle,
+    buildStatusStyles,
+    normalizeSettings,
+} from '@/lib/attendance-status'
 
 interface AttendanceRecord { employee_id: string; date: string; status: string }
 interface Employee { id: string; name: string; emp_code: string }
@@ -12,38 +18,27 @@ interface Props {
     year: number
     daysInMonth: number
     today: string
-}
-
-const DEFAULT_STATUS_CYCLE = ['', 'P', 'A', 'H', 'OT', '2P', '2OT', 'L', 'HD', 'WO']
-
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-    P: { bg: '#00A651', color: '#fff' },
-    '2P': { bg: '#3B82F6', color: '#fff' },
-    A: { bg: '#EF4444', color: '#fff' },
-    H: { bg: '#F59E0B', color: '#fff' },
-    OT: { bg: '#F97316', color: '#fff' },
-    '2OT': { bg: '#8B5CF6', color: '#fff' },
-    L: { bg: '#EC4899', color: '#fff' },
-    HD: { bg: '#D1D5DB', color: '#374151' },
-    WO: { bg: '#F3F4F6', color: '#9CA3AF' },
-    '': { bg: 'transparent', color: '#D1D5DB' },
+    settings?: AttendanceStatusOption[]
 }
 
 export default function AttendanceGrid({
-    employees, attendance, month, year, daysInMonth, today,
+    employees, attendance, month, year, daysInMonth, today, settings: settingsProp,
 }: Props) {
+    const settings = useMemo(() => normalizeSettings(settingsProp), [settingsProp])
+    const statusCycle = useMemo(() => buildStatusCycle(settings), [settings])
+    const statusStyles = useMemo(() => buildStatusStyles(settings), [settings])
+
     const [changes, setChanges] = useState<Record<string, string>>({})
     const [saving, setSaving] = useState(false)
     const [msg, setMsg] = useState('')
 
     const isDirty = Object.keys(changes).length > 0
 
-    // ── Unsaved changes browser warning ──
     useEffect(() => {
         if (!isDirty) return
         const handler = (e: BeforeUnloadEvent) => {
             e.preventDefault()
-            e.returnValue = 'Attendance mein unsaved changes hain!'
+            e.returnValue = 'You have unsaved attendance changes.'
         }
         window.addEventListener('beforeunload', handler)
         return () => window.removeEventListener('beforeunload', handler)
@@ -57,8 +52,8 @@ export default function AttendanceGrid({
 
     function cycleStatus(empId: string, dateStr: string) {
         const current = getStatus(empId, dateStr)
-        const idx = DEFAULT_STATUS_CYCLE.indexOf(current)
-        const next = DEFAULT_STATUS_CYCLE[(idx + 1) % DEFAULT_STATUS_CYCLE.length]
+        const idx = statusCycle.indexOf(current)
+        const next = statusCycle[(idx === -1 ? 0 : idx + 1) % statusCycle.length]
         setChanges(prev => ({ ...prev, [`${empId}__${dateStr}`]: next }))
     }
 
@@ -80,24 +75,22 @@ export default function AttendanceGrid({
                 body: JSON.stringify({ records }),
             })
             if (res.ok) {
-                setMsg('✅ Saved!')
-                setChanges({})   // clear dirty state
+                setMsg('Saved!')
+                setChanges({})
             } else {
                 const d = await res.json()
-                setMsg('❌ ' + (d.error ?? 'Failed'))
+                setMsg(d.error ?? 'Failed')
             }
         } catch {
-            setMsg('❌ Network error')
+            setMsg('Network error')
         }
 
         setSaving(false)
         setTimeout(() => setMsg(''), 3000)
     }
 
-    // Day headers
     const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 
-    // Sunday check
     function isSunday(day: number) {
         return new Date(year, month - 1, day).getDay() === 0
     }
@@ -108,7 +101,6 @@ export default function AttendanceGrid({
 
     return (
         <div>
-            {/* Save bar — sticky bottom */}
             <div style={{
                 position: 'sticky', top: '60px', zIndex: 50,
                 background: isDirty ? '#FFF7ED' : 'white',
@@ -127,16 +119,12 @@ export default function AttendanceGrid({
                             : msg || 'Tap any cell to mark attendance'
                         }
                     </span>
-                    {msg && !isDirty && (
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: msg.startsWith('✅') ? '#059669' : '#EF4444' }}>
-                            {msg}
-                        </span>
-                    )}
                 </div>
 
                 <button
                     onClick={handleSave}
                     disabled={!isDirty || saving}
+                    aria-label="Save attendance changes"
                     style={{
                         display: 'flex', alignItems: 'center', gap: '5px',
                         background: isDirty
@@ -160,18 +148,15 @@ export default function AttendanceGrid({
 
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-            {/* Grid scroll wrapper */}
             <div style={{ overflowX: 'auto', borderRadius: '14px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)', background: 'white' }}>
-                {/* Scroll hint on mobile */}
                 <div style={{ fontSize: '11px', color: '#9CA3AF', textAlign: 'right', padding: '6px 10px 0', background: 'white' }}>
                     ← scroll →
                 </div>
 
-                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: `${120 + daysInMonth * 36}px` }}>
-                    {/* Header row */}
+                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: `${120 + daysInMonth * 36}px` }} aria-label={`Attendance for ${month}/${year}`}>
                     <thead>
                         <tr style={{ background: '#F9FAFB' }}>
-                            <th style={{
+                            <th scope="col" style={{
                                 position: 'sticky', left: 0, background: '#F9FAFB', zIndex: 10,
                                 padding: '10px 10px', textAlign: 'left',
                                 fontSize: '11px', fontWeight: 800, color: '#6B7280',
@@ -181,7 +166,7 @@ export default function AttendanceGrid({
                                 Employee
                             </th>
                             {days.map(d => (
-                                <th key={d} style={{
+                                <th scope="col" key={d} style={{
                                     padding: '6px 2px',
                                     fontSize: '11px', fontWeight: 700, textAlign: 'center',
                                     color: d === todayDay ? '#00A651' : isSunday(d) ? '#EF4444' : '#6B7280',
@@ -196,27 +181,26 @@ export default function AttendanceGrid({
                         </tr>
                     </thead>
 
-                    {/* Employee rows */}
                     <tbody>
                         {employees.map((emp, ri) => (
                             <tr key={emp.id} style={{ background: ri % 2 === 0 ? 'white' : '#FAFAFA' }}>
-                                {/* Name cell — sticky */}
-                                <td style={{
+                                <th scope="row" style={{
                                     position: 'sticky', left: 0, zIndex: 5,
                                     background: ri % 2 === 0 ? 'white' : '#FAFAFA',
                                     padding: '6px 10px',
                                     borderBottom: '1px solid #F3F4F6',
                                     whiteSpace: 'nowrap',
+                                    textAlign: 'left',
+                                    fontWeight: 'normal',
                                 }}>
                                     <div style={{ fontWeight: 800, fontSize: '12px', color: '#111827' }}>{emp.name}</div>
                                     <div style={{ fontSize: '10px', color: '#9CA3AF' }}>{emp.emp_code}</div>
-                                </td>
+                                </th>
 
-                                {/* Day cells */}
                                 {days.map(d => {
                                     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
                                     const status = getStatus(emp.id, dateStr)
-                                    const style = STATUS_STYLES[status] ?? STATUS_STYLES['']
+                                    const style = statusStyles[status] ?? statusStyles['']
                                     const key = `${emp.id}__${dateStr}`
                                     const changed = key in changes
 
@@ -228,11 +212,12 @@ export default function AttendanceGrid({
                                         }}>
                                             <button
                                                 onClick={() => cycleStatus(emp.id, dateStr)}
-                                                title={`${emp.name} — ${dateStr}`}
+                                                aria-label={`${emp.name} ${dateStr}: ${status || 'empty'}. Tap to change.`}
+                                                title={`${emp.name} — ${dateStr}${style.label ? ` (${style.label})` : ''}`}
                                                 style={{
                                                     width: '32px', height: '32px', borderRadius: '8px',
                                                     background: style.bg, color: style.color,
-                                                    border: changed ? '2px solid #1a1a2e' : '1.5px solid transparent',
+                                                    border: changed ? '2px solid #1a1a2e' : '1.5px solid #E5E7EB',
                                                     cursor: 'pointer',
                                                     fontWeight: 900, fontSize: status.length > 2 ? '9px' : '11px',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -252,18 +237,18 @@ export default function AttendanceGrid({
                 </table>
             </div>
 
-            {/* Legend */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px', padding: '0 2px' }}>
-                {Object.entries(STATUS_STYLES).filter(([k]) => k !== '').map(([code, style]) => (
-                    <div key={code} style={{
+                {settings.map(s => (
+                    <div key={s.code} style={{
                         display: 'flex', alignItems: 'center', gap: '4px',
                         fontSize: '11px', color: '#6B7280',
                     }}>
                         <span style={{
-                            background: style.bg, color: style.color,
+                            background: s.color, color: s.text_color,
                             borderRadius: '5px', padding: '2px 6px',
                             fontWeight: 900, fontSize: '10px',
-                        }}>{code}</span>
+                        }}>{s.code}</span>
+                        <span>{s.label}</span>
                     </div>
                 ))}
                 <div style={{ fontSize: '11px', color: '#9CA3AF', marginLeft: '4px' }}>

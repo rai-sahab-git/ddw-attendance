@@ -1,23 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { AttendanceStatus, Employee } from '@/types'
-
-const STATUS_OPTIONS: { value: AttendanceStatus; label: string; color: string; bg: string }[] = [
-    { value: 'P', label: 'P', color: '#fff', bg: '#00A651' },
-    { value: '2P', label: '2P', color: '#fff', bg: '#3B82F6' },
-    { value: 'A', label: 'A', color: '#fff', bg: '#EF4444' },
-    { value: 'H', label: 'H', color: '#fff', bg: '#F59E0B' },
-    { value: 'OT', label: 'OT', color: '#fff', bg: '#F97316' },
-    { value: '2OT', label: '2OT', color: '#fff', bg: '#8B5CF6' },
-    { value: 'L', label: 'L', color: '#fff', bg: '#EC4899' },
-]
+import type { Employee } from '@/types'
+import {
+    type AttendanceStatusOption,
+    normalizeSettings,
+} from '@/lib/attendance-status'
 
 type EmployeeAttendance = {
     employee: Employee
-    status: AttendanceStatus
+    status: string
     ot_hours: number
     existingId?: string
 }
@@ -33,26 +27,40 @@ export default function MarkAttendancePage() {
     })
 
     const [records, setRecords] = useState<EmployeeAttendance[]>([])
+    const [settings, setSettings] = useState<AttendanceStatusOption[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+    const [error, setError] = useState('')
+
+    const statusOptions = useMemo(() => normalizeSettings(settings), [settings])
+    const defaultStatus = statusOptions.find(s => s.code === 'P')?.code ?? statusOptions[0]?.code ?? 'P'
 
     useEffect(() => { loadData() }, [])
 
     async function loadData() {
-        const [{ data: employees }, { data: existing }] = await Promise.all([
+        const [{ data: employees }, { data: existing }, settingsRes] = await Promise.all([
             supabase.from('employees').select('*').eq('is_active', true).order('emp_code'),
             supabase.from('attendance_records').select('*').eq('date', todayStr),
+            fetch('/api/admin/settings/attendance').then(r => r.ok ? r.json() : []),
         ])
-        if (!employees) return
+        const normalized = normalizeSettings(Array.isArray(settingsRes) ? settingsRes.filter((s: { is_active?: boolean }) => s.is_active !== false) : [])
+        setSettings(normalized)
+        const fallback = normalized.find(s => s.code === 'P')?.code ?? normalized[0]?.code ?? 'P'
+        if (!employees) { setLoading(false); return }
         setRecords(employees.map(emp => {
             const ex = existing?.find(r => r.employee_id === emp.id)
-            return { employee: emp, status: (ex?.status as AttendanceStatus) ?? 'P', ot_hours: ex?.ot_hours ?? 0, existingId: ex?.id }
+            return {
+                employee: emp,
+                status: ex?.status ?? fallback,
+                ot_hours: ex?.ot_hours ?? 0,
+                existingId: ex?.id,
+            }
         }))
         setLoading(false)
     }
 
-    function setStatus(empId: string, status: AttendanceStatus) {
+    function setStatus(empId: string, status: string) {
         setRecords(prev => prev.map(r => r.employee.id === empId ? { ...r, status } : r))
     }
 
@@ -60,30 +68,49 @@ export default function MarkAttendancePage() {
         setRecords(prev => prev.map(r => r.employee.id === empId ? { ...r, ot_hours: hours } : r))
     }
 
-    function markAll(status: AttendanceStatus) {
+    function markAll(status: string) {
         setRecords(prev => prev.map(r => ({ ...r, status })))
     }
 
     async function handleSave() {
         setSaving(true)
+        setError('')
         const month = today.getMonth() + 1
         const year = today.getFullYear()
-        const { error } = await supabase.from('attendance_records').upsert(
-            records.map(r => ({
-                ...(r.existingId ? { id: r.existingId } : {}),
-                employee_id: r.employee.id, date: todayStr,
-                month, year, status: r.status, ot_hours: r.ot_hours,
-            })),
-            { onConflict: 'employee_id,date', ignoreDuplicates: false }
-        )
-        if (!error) {
+        try {
+            const res = await fetch('/api/admin/attendance/bulk-save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    records: records.map(r => ({
+                        ...(r.existingId ? { id: r.existingId } : {}),
+                        employee_id: r.employee.id,
+                        date: todayStr,
+                        month,
+                        year,
+                        status: r.status,
+                        ot_hours: r.ot_hours,
+                    })),
+                }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                setError(data.error ?? 'Save failed')
+                setSaving(false)
+                return
+            }
             setSaved(true)
             setTimeout(() => { router.push('/admin/attendance'); router.refresh() }, 1200)
+        } catch {
+            setError('Network error')
         }
         setSaving(false)
     }
 
-    const presentCount = records.filter(r => ['P', '2P', 'OT', '2OT'].includes(r.status)).length
+    const presentCodes = new Set(
+        statusOptions.filter(s => ['present', 'ot_fixed', 'per_day_multiply'].includes(s.calc_type ?? '')).map(s => s.code)
+    )
+    const presentCount = records.filter(r => presentCodes.has(r.status) || ['P', '2P', 'OT', '2OT'].includes(r.status)).length
 
     if (loading) return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -95,15 +122,17 @@ export default function MarkAttendancePage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '8px' }}>
-
-            {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button onClick={() => router.back()} style={{
-                    width: '38px', height: '38px', background: 'white',
-                    borderRadius: '12px', border: '1px solid #E5E7EB',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                }}>
+                <button
+                    onClick={() => router.back()}
+                    aria-label="Go back"
+                    style={{
+                        width: '38px', height: '38px', background: 'white',
+                        borderRadius: '12px', border: '1px solid #E5E7EB',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    }}
+                >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5">
                         <path d="M15 18l-6-6 6-6" />
                     </svg>
@@ -114,7 +143,6 @@ export default function MarkAttendancePage() {
                 </div>
             </div>
 
-            {/* Stats + Bulk Actions */}
             <div style={{
                 background: 'white', borderRadius: '16px',
                 padding: '12px 16px',
@@ -126,7 +154,7 @@ export default function MarkAttendancePage() {
                     <span style={{ fontSize: '14px', color: '#6B7280' }}> / {records.length} present</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => markAll('P')} style={{
+                    <button onClick={() => markAll(defaultStatus)} style={{
                         background: '#E8F8EF', color: '#00A651',
                         fontWeight: 700, fontSize: '12px',
                         padding: '7px 14px', borderRadius: '10px',
@@ -134,7 +162,7 @@ export default function MarkAttendancePage() {
                     }}>
                         All Present
                     </button>
-                    <button onClick={() => markAll('A')} style={{
+                    <button onClick={() => markAll(statusOptions.find(s => s.code === 'A')?.code ?? 'A')} style={{
                         background: '#FEF2F2', color: '#EF4444',
                         fontWeight: 700, fontSize: '12px',
                         padding: '7px 14px', borderRadius: '10px',
@@ -145,26 +173,33 @@ export default function MarkAttendancePage() {
                 </div>
             </div>
 
-            {/* Employee Cards */}
+            {error && (
+                <div style={{ background: '#FEF2F2', color: '#DC2626', padding: '10px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: 600 }}>
+                    {error}
+                </div>
+            )}
+
             {records.map(({ employee, status, ot_hours }) => {
-                const opt = STATUS_OPTIONS.find(o => o.value === status)!
+                const opt = statusOptions.find(o => o.code === status) ?? {
+                    code: status, label: status, color: '#6B7280', text_color: '#FFFFFF',
+                }
                 const initials = employee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+                const isOt = (opt.calc_type === 'ot_fixed') || status === 'OT' || status === '2OT'
                 return (
                     <div key={employee.id} style={{
                         background: 'white', borderRadius: '16px',
                         padding: '14px',
                         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                        border: `2px solid ${opt.bg}22`,
+                        border: `2px solid ${opt.color}22`,
                     }}>
-                        {/* Top row */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <div style={{
                                     width: '40px', height: '40px',
-                                    background: `${opt.bg}18`,
+                                    background: `${opt.color}18`,
                                     borderRadius: '50%',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontWeight: 800, fontSize: '13px', color: opt.bg,
+                                    fontWeight: 800, fontSize: '13px', color: opt.color,
                                 }}>
                                     {initials}
                                 </div>
@@ -173,9 +208,8 @@ export default function MarkAttendancePage() {
                                     <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '1px' }}>{employee.emp_code}</div>
                                 </div>
                             </div>
-                            {/* Status badge */}
                             <div style={{
-                                background: opt.bg, color: opt.color,
+                                background: opt.color, color: opt.text_color,
                                 fontWeight: 800, fontSize: '13px',
                                 padding: '5px 12px', borderRadius: '999px',
                                 minWidth: '40px', textAlign: 'center',
@@ -184,12 +218,14 @@ export default function MarkAttendancePage() {
                             </div>
                         </div>
 
-                        {/* Status buttons */}
-                        <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
-                            {STATUS_OPTIONS.map(opt => (
+                        <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }} role="group" aria-label={`Status for ${employee.name}`}>
+                            {statusOptions.map(option => (
                                 <button
-                                    key={opt.value}
-                                    onClick={() => setStatus(employee.id, opt.value)}
+                                    key={option.code}
+                                    type="button"
+                                    onClick={() => setStatus(employee.id, option.code)}
+                                    aria-pressed={status === option.code}
+                                    title={option.label}
                                     style={{
                                         padding: '6px 12px',
                                         borderRadius: '10px',
@@ -197,23 +233,23 @@ export default function MarkAttendancePage() {
                                         fontSize: '12px',
                                         cursor: 'pointer',
                                         border: '2px solid',
-                                        borderColor: status === opt.value ? opt.bg : '#E5E7EB',
-                                        background: status === opt.value ? opt.bg : 'transparent',
-                                        color: status === opt.value ? 'white' : '#6B7280',
-                                        transform: status === opt.value ? 'scale(1.05)' : 'scale(1)',
+                                        borderColor: status === option.code ? option.color : '#E5E7EB',
+                                        background: status === option.code ? option.color : 'transparent',
+                                        color: status === option.code ? option.text_color : '#6B7280',
+                                        transform: status === option.code ? 'scale(1.05)' : 'scale(1)',
                                         transition: 'all 0.15s ease',
                                     }}
                                 >
-                                    {opt.label}
+                                    {option.code}
                                 </button>
                             ))}
                         </div>
 
-                        {/* OT Hours */}
-                        {(status === 'OT' || status === '2OT') && (
+                        {isOt && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                                <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>OT Hours:</span>
+                                <label htmlFor={`ot-${employee.id}`} style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>OT Hours:</label>
                                 <input
+                                    id={`ot-${employee.id}`}
                                     type="number"
                                     value={ot_hours || ''}
                                     onChange={e => setOtHours(employee.id, parseFloat(e.target.value) || 0)}
@@ -233,7 +269,6 @@ export default function MarkAttendancePage() {
                 )
             })}
 
-            {/* Save Button */}
             <div style={{ position: 'sticky', bottom: '80px', paddingTop: '4px' }}>
                 <button
                     onClick={handleSave}
@@ -242,9 +277,7 @@ export default function MarkAttendancePage() {
                         width: '100%',
                         padding: '16px',
                         borderRadius: '16px',
-                        background: saved
-                            ? 'linear-gradient(135deg, #00A651, #007A3D)'
-                            : 'linear-gradient(135deg, #00A651, #007A3D)',
+                        background: 'linear-gradient(135deg, #00A651, #007A3D)',
                         color: 'white',
                         fontWeight: 800,
                         fontSize: '15px',
@@ -255,13 +288,7 @@ export default function MarkAttendancePage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                     }}
                 >
-                    {saved ? (
-                        <>✅ Saved Successfully!</>
-                    ) : saving ? (
-                        <>Saving...</>
-                    ) : (
-                        <>💾 Save Attendance ({records.length} employees)</>
-                    )}
+                    {saved ? 'Saved successfully!' : saving ? 'Saving...' : `Save Attendance (${records.length} employees)`}
                 </button>
             </div>
         </div>

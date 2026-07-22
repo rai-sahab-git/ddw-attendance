@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdminAuth } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     try {
         const { records } = await request.json()
 

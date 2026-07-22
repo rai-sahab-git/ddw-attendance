@@ -100,6 +100,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {/* Settings */}
                     <Link href="/admin/settings"
+                        aria-label="Settings"
+                        aria-current={pathname.startsWith('/admin/settings') ? 'page' : undefined}
                         style={{
                             width: '34px', height: '34px', borderRadius: '9px',
                             background: pathname.startsWith('/admin/settings') ? '#F0FDF4' : '#F9FAFB',
@@ -112,6 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                     {/* Logout */}
                     <button onClick={handleLogout} disabled={loggingOut}
+                        aria-label="Log out"
                         style={{
                             display: 'flex', alignItems: 'center', gap: '5px',
                             background: '#FEF2F2', color: '#EF4444',
@@ -139,7 +142,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </main>
 
             {/* Bottom nav */}
-            <nav className="bottom-nav" style={{
+            <nav className="bottom-nav" aria-label="Admin navigation" style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
                 background: 'white', borderTop: '1px solid #E5E7EB',
                 display: 'flex',
@@ -152,6 +155,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                     return (
                         <Link key={href} href={href} onClick={() => handleNavClick(href)}
+                            aria-current={isActive ? 'page' : undefined}
+                            aria-label={badge > 0 ? `${label}, ${badge} pending` : label}
                             style={{
                                 flex: 1, display: 'flex', flexDirection: 'column',
                                 alignItems: 'center', justifyContent: 'center',

@@ -176,29 +176,38 @@ export function calculateSalaryV2(
     }
 }
 
-// ── Backward-compatible fields on SalaryCalculation ──
-// Purani pages otAmount, extraDays use karti hain
-declare module '@/lib/salary-calculator' { }
+export type SalaryCalculationLegacy = SalaryCalculation & {
+    otAmount: number
+    extraDays: number
+}
 
-// ── Backward-compatible wrapper ──
-// Old call: calculateSalary(emp, records, advance, otAmt, extraAmt, paidAmt)
+/** Map V2 result to legacy field names used by list/export UIs */
+export function withLegacyFields(result: SalaryCalculation): SalaryCalculationLegacy {
+    return {
+        ...result,
+        otAmount: result.bonusTotal,
+        extraDays: result.typeBreakdown.filter(t => t.amount > 0).reduce((s, t) => s + t.count, 0),
+    }
+}
+
+/**
+ * Salary calc with settings + overrides (required for correct deductions/bonuses).
+ */
 export function calculateSalary(
     employee: Employee,
     records: { status: string }[],
     advanceTotal: number,
-    _otAmount = 0,
-    _extraWork = 0,
+    settings: AttendanceTypeSetting[],
+    overrides: EmployeeOverride[] = [],
     paidAmount = 0,
     month = 0,
     year = 0,
-): SalaryCalculation & { otAmount: number; extraDays: number } {
-    const result = calculateSalaryV2(
-        employee, records, [], [], advanceTotal, 0, paidAmount, month, year
+    otherDeductions = 0,
+): SalaryCalculationLegacy {
+    return withLegacyFields(
+        calculateSalaryV2(
+            employee, records, settings, overrides,
+            advanceTotal, otherDeductions, paidAmount, month, year,
+        )
     )
-    return {
-        ...result,
-        // bonusTotal = OT+extras combined — map to old field names
-        otAmount: result.bonusTotal,
-        extraDays: result.typeBreakdown.filter(t => t.amount > 0).reduce((s, t) => s + t.count, 0),
-    }
 }

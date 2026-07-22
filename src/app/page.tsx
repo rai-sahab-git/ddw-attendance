@@ -7,9 +7,8 @@ export default async function RootPage() {
 
   if (!user) redirect('/login')
 
-
   const { data: profile } = await supabase
-    .from('users')
+    .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single()

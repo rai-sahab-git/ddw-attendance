@@ -20,10 +20,11 @@ export default async function AttendancePage({
   const nextDate = new Date(year, month, 1)
   const todayStr = today.toISOString().split('T')[0]
 
-  const [{ data: employees }, { data: attendance }, { count: totalEmp }] = await Promise.all([
+  const [{ data: employees }, { data: attendance }, { count: totalEmp }, { data: settings }] = await Promise.all([
     supabase.from('employees').select('*').eq('is_active', true).order('emp_code'),
     supabase.from('attendance_records').select('*').eq('month', month).eq('year', year),
     supabase.from('employees').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('attendance_settings').select('*').eq('is_active', true).order('sort_order'),
   ])
 
   const todayPresent = attendance?.filter(r =>
@@ -96,6 +97,7 @@ export default async function AttendancePage({
         year={year}
         daysInMonth={daysInMonth}
         today={todayStr}
+        settings={settings ?? undefined}
       />
     </div>
   )

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { calculateSalary } from '@/lib/salary-calculator'
+import { requireAdminAuth } from '@/lib/api-auth'
 
 const MONTH_NAMES = [
     '', 'January', 'February', 'March', 'April', 'May', 'June',
@@ -8,6 +9,9 @@ const MONTH_NAMES = [
 ]
 
 export async function GET(request: NextRequest) {
+    const authError = await requireAdminAuth()
+    if (authError) return authError
+
     try {
         const { searchParams } = request.nextUrl
         const month = parseInt(searchParams.get('month') ?? String(new Date().getMonth() + 1))
@@ -24,13 +28,24 @@ export async function GET(request: NextRequest) {
             { data: advances },
             { data: salaryRecords },
             { data: allAdvances },
+            { data: settings },
+            { data: allOverrides },
         ] = await Promise.all([
             supabase.from('employees').select('*').eq('is_active', true).order('emp_code'),
             supabase.from('attendance_records').select('*').eq('month', month).eq('year', year),
             supabase.from('advance_payments').select('*').eq('deduct_month', month).eq('deduct_year', year),
             supabase.from('monthly_salary').select('*').eq('month', month).eq('year', year),
             supabase.from('advance_payments').select('*, employees(name, emp_code)').order('date', { ascending: false }),
+            supabase.from('attendance_settings').select('*').eq('is_active', true),
+            supabase.from('employee_type_overrides').select('*'),
         ])
+
+        const settingsList = (settings ?? []).map(s => ({
+            code: s.code,
+            calc_type: s.calc_type,
+            fixed_amount: s.fixed_amount ?? 0,
+            multiplier: s.multiplier ?? 1,
+        }))
 
         // ── Dynamic import (production fix for xlsx) ──
         const XLSX = await import('xlsx')
@@ -42,7 +57,7 @@ export async function GET(request: NextRequest) {
         // ───────────────────────────────
         // SHEET 1 — Salary Sheet
         // ───────────────────────────────
-        const salaryRows: any[][] = []
+        const salaryRows: (string | number)[][] = []
         salaryRows.push([`DDW SALARY SHEET — ${monthLabel}`])
         salaryRows.push([`Generated: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`])
         salaryRows.push([])
@@ -61,7 +76,24 @@ export async function GET(request: NextRequest) {
             const empAtt = attendance?.filter(a => a.employee_id === emp.id) ?? []
             const empAdv = advances?.filter(a => a.employee_id === emp.id).reduce((s, a) => s + a.amount, 0) ?? 0
             const savedRec = salaryRecords?.find(s => s.employee_id === emp.id)
-            const s = calculateSalary(emp, empAtt as any, empAdv, savedRec?.ot_amount ?? 0, savedRec?.extra_work_amount ?? 0, savedRec?.paid_amount ?? 0)
+            const empOverrides = (allOverrides ?? [])
+                .filter(o => o.employee_id === emp.id)
+                .map(o => ({
+                    type_code: o.type_code,
+                    override_amount: o.override_amount,
+                    override_multiplier: o.override_multiplier,
+                }))
+            const s = calculateSalary(
+                emp,
+                empAtt,
+                empAdv,
+                settingsList,
+                empOverrides,
+                savedRec?.paid_amount ?? 0,
+                month,
+                year,
+                savedRec?.other_deductions ?? 0,
+            )
 
             totalPayable += s.payableAmount
             totalPaid += s.paidAmount
@@ -92,16 +124,16 @@ export async function GET(request: NextRequest) {
         // ───────────────────────────────
         // SHEET 2 — Attendance Grid
         // ───────────────────────────────
-        const attRows: any[][] = []
+        const attRows: (string | number)[][] = []
         attRows.push([`DDW ATTENDANCE — ${monthLabel}`])
         attRows.push([])
-        const attHeader = ['Name', 'Emp Code']
+        const attHeader: (string | number)[] = ['Name', 'Emp Code']
         for (let d = 1; d <= daysInMonth; d++) attHeader.push(String(d))
         attHeader.push('Present', 'Absent', 'Half Day', 'Extra(2P)')
         attRows.push(attHeader)
 
         employees?.forEach(emp => {
-            const row: any[] = [emp.name, emp.emp_code]
+            const row: (string | number)[] = [emp.name, emp.emp_code]
             let P = 0, A = 0, H = 0, Ex = 0
             for (let d = 1; d <= daysInMonth; d++) {
                 const ds = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
@@ -124,11 +156,20 @@ export async function GET(request: NextRequest) {
         // ───────────────────────────────
         // SHEET 3 — Advances
         // ───────────────────────────────
-        const advRows: any[][] = []
+        const advRows: (string | number)[][] = []
         advRows.push(['DDW ADVANCE RECORDS'])
         advRows.push([])
         advRows.push(['Date', 'Emp Code', 'Name', 'Amount', 'Description', 'Deduct Month', 'Deduct Year', 'Status'])
-        allAdvances?.forEach((a: any) => {
+        type AdvanceExportRow = {
+            date: string
+            amount: number
+            description?: string | null
+            deduct_month?: number | null
+            deduct_year?: number | null
+            is_deducted?: boolean
+            employees?: { name?: string; emp_code?: string } | null
+        }
+        ;(allAdvances as AdvanceExportRow[] | null)?.forEach((a) => {
             advRows.push([
                 a.date, a.employees?.emp_code ?? '', a.employees?.name ?? '',
                 a.amount, a.description ?? '',

@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+function LoginForm() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const supabase = createClient()
 
-    const [tab, setTab] = useState<'admin' | 'employee'>('admin')
+    const initialTab = searchParams.get('tab') === 'employee' ? 'employee' : 'admin'
+    const [tab, setTab] = useState<'admin' | 'employee'>(initialTab)
 
     // Admin fields
     const [email, setEmail] = useState('')
@@ -130,7 +132,9 @@ export default function LoginPage() {
                     {(['admin', 'employee'] as const).map(t => (
                         <button
                             key={t}
+                            type="button"
                             onClick={() => { setTab(t); setError('') }}
+                            aria-pressed={tab === t}
                             style={{
                                 flex: 1, padding: '10px',
                                 borderRadius: '10px', border: 'none', cursor: 'pointer',
@@ -142,7 +146,7 @@ export default function LoginPage() {
                                 transition: 'all 0.2s ease',
                             }}
                         >
-                            {t === 'admin' ? '🔐 Admin' : '👤 Employee'}
+                            {t === 'admin' ? 'Admin' : 'Employee'}
                         </button>
                     ))}
                 </div>
@@ -165,13 +169,15 @@ export default function LoginPage() {
 
                         {/* Email */}
                         <div>
-                            <label style={labelStyle}>Email</label>
+                            <label htmlFor="admin-email" style={labelStyle}>Email</label>
                             <input
+                                id="admin-email"
                                 type="email"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 placeholder="admin@ddw.com"
                                 required
+                                autoComplete="username"
                                 style={getInputStyle()}
                                 onFocus={e => { e.target.style.borderColor = '#00A651'; e.target.style.background = 'rgba(255,255,255,0.12)' }}
                                 onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(255,255,255,0.08)' }}
@@ -180,14 +186,16 @@ export default function LoginPage() {
 
                         {/* Password */}
                         <div>
-                            <label style={labelStyle}>Password</label>
+                            <label htmlFor="admin-password" style={labelStyle}>Password</label>
                             <div style={{ position: 'relative' }}>
                                 <input
+                                    id="admin-password"
                                     type={showPass ? 'text' : 'password'}
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     required
+                                    autoComplete="current-password"
                                     style={{ ...getInputStyle(), paddingRight: '48px' }}
                                     onFocus={e => { e.target.style.borderColor = '#00A651'; e.target.style.background = 'rgba(255,255,255,0.12)' }}
                                     onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(255,255,255,0.08)' }}
@@ -195,6 +203,7 @@ export default function LoginPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPass(p => !p)}
+                                    aria-label={showPass ? 'Hide password' : 'Show password'}
                                     style={{
                                         position: 'absolute', right: '14px', top: '50%',
                                         transform: 'translateY(-50%)',
@@ -202,7 +211,7 @@ export default function LoginPage() {
                                         color: 'rgba(255,255,255,0.4)', fontSize: '16px', padding: '4px',
                                     }}
                                 >
-                                    {showPass ? '🙈' : '👁️'}
+                                    {showPass ? 'Hide' : 'Show'}
                                 </button>
                             </div>
                         </div>
@@ -358,5 +367,22 @@ function SubmitButton({
                 </>
             ) : label}
         </button>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div style={{
+                minHeight: '100dvh',
+                background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f2027 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontFamily: 'Inter, sans-serif',
+            }}>
+                Loading…
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     )
 }

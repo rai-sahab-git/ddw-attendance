@@ -7,6 +7,7 @@ export default async function RootPage() {
 
   if (!user) redirect('/login')
 
+
   const { data: profile } = await supabase
     .from('users')
     .select('role')

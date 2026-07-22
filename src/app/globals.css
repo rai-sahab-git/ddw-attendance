@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  --font-main: 'Inter', sans-serif;
+  --font-main: 'Inter', system-ui, sans-serif;
   --green-primary: #00A651;
   --green-dark: #007A3D;
   --green-light: #E8F8EF;
@@ -22,6 +22,8 @@
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-xl: 24px;
+  --app-max: 560px;
+  --app-pad: 14px;
 }
 
 *,
@@ -37,6 +39,8 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  /* Keep admin/employee UI light even when OS is in dark mode */
+  color-scheme: light;
 }
 
 body {
@@ -45,6 +49,14 @@ body {
   color: var(--gray-900);
   min-height: 100dvh;
   line-height: 1.5;
+}
+
+/* Prevent OS dark mode from washing out native form controls on light pages */
+input,
+select,
+textarea,
+button {
+  color-scheme: light;
 }
 
 ::-webkit-scrollbar {
@@ -70,7 +82,6 @@ button:active {
   transform: scale(0.97);
 }
 
-/* Accessible focus indicators (forms often set outline:none inline) */
 :focus-visible {
   outline: 2px solid var(--green-primary);
   outline-offset: 2px;
@@ -87,4 +98,103 @@ textarea:focus-visible {
   outline: 2px solid var(--green-primary);
   outline-offset: 1px;
   border-color: var(--green-primary) !important;
+}
+
+/* ── Login (dark) — solid fields + autofill fix ── */
+.login-page {
+  color-scheme: dark;
+}
+
+.login-page input,
+.login-page select,
+.login-page textarea,
+.login-page button {
+  color-scheme: dark;
+}
+
+.login-page .login-input {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+  caret-color: #F8FAFC;
+}
+
+.login-page .login-input::placeholder {
+  color: #64748B !important;
+  opacity: 1;
+}
+
+.login-page .login-input:focus {
+  border-color: var(--login-accent, #00A651) !important;
+  background-color: #1E293B !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--login-accent, #00A651) 28%, transparent);
+}
+
+/* Chrome/Safari autofill paints a light yellow bg — force dark */
+.login-page .login-input:-webkit-autofill,
+.login-page .login-input:-webkit-autofill:hover,
+.login-page .login-input:-webkit-autofill:focus,
+.login-page .login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #F8FAFC !important;
+  caret-color: #F8FAFC !important;
+  box-shadow: 0 0 0 1000px #1E293B inset !important;
+  -webkit-box-shadow: 0 0 0 1000px #1E293B inset !important;
+  transition: background-color 99999s ease-in-out 0s;
+  border-color: #475569 !important;
+}
+
+/* ── Responsive app shell ── */
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: var(--app-pad);
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 640px) {
+  :root {
+    --app-max: 640px;
+    --app-pad: 18px;
+  }
+}
+
+@media (min-width: 900px) {
+  :root {
+    --app-max: 860px;
+    --app-pad: 24px;
+  }
+}
+
+/* Attendance grid pages need more width on tablet/desktop */
+.app-main--wide {
+  max-width: min(1100px, 100%);
+}
+
+@media (max-width: 380px) {
+  :root {
+    --app-pad: 10px;
+  }
+
+  .stats-3col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Light-theme form fields stay dark-on-white even under OS dark mode */
+.app-main input:not([type="checkbox"]):not([type="radio"]),
+.app-main select,
+.app-main textarea {
+  color: #111827;
+  background-color: #ffffff;
+  color-scheme: light;
+}
+
+.app-main input:-webkit-autofill,
+.app-main input:-webkit-autofill:hover,
+.app-main input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #111827 !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  transition: background-color 99999s ease-in-out 0s;
 }

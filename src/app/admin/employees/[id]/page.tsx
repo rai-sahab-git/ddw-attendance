@@ -89,8 +89,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
     const inp: React.CSSProperties = {
         flex: 1, padding: '9px 12px', borderRadius: '9px',
-        border: '1.5px solid #E5E7EB', fontSize: '14px',
-        fontWeight: 700, outline: 'none', background: 'white',
+        border: '1.5px solid #E5E7EB', fontSize: '14px', color: '#111827',
+        fontWeight: 700, background: '#FFFFFF', colorScheme: 'light',
     }
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>Loading...</div>

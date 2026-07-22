@@ -28,9 +28,9 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                 position: 'sticky', top: 0, zIndex: 50,
                 boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
             }}>
-                <div style={{
+                <div className="app-header-inner" style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '0 16px', height: '56px', maxWidth: '640px', margin: '0 auto',
+                    padding: '0 var(--app-pad)', height: '56px', maxWidth: 'var(--app-max)', margin: '0 auto', width: '100%',
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
@@ -39,13 +39,13 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                             borderRadius: '10px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                            <span style={{ fontSize: '18px' }}>👤</span>
+                            <span style={{ fontSize: '18px' }} aria-hidden>👤</span>
                         </div>
                         <div>
-                            <div style={{ color: 'white', fontWeight: 800, fontSize: '15px', lineHeight: 1 }}>
+                            <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '15px', lineHeight: 1 }}>
                                 My Attendance
                             </div>
-                            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginTop: '2px' }}>
+                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
                                 Employee Portal
                             </div>
                         </div>
@@ -62,7 +62,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                 </div>
             </header>
 
-            <main style={{ maxWidth: '640px', margin: '0 auto', padding: '16px 16px 90px' }}>
+            <main className="app-main">
                 {children}
             </main>
 
@@ -72,7 +72,7 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
                 boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
                 zIndex: 50, paddingBottom: 'env(safe-area-inset-bottom)',
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-around', maxWidth: '640px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-around', maxWidth: 'var(--app-max)', margin: '0 auto', width: '100%' }}>
                     {navItems.map(({ href, icon: Icon, label }) => {
                         const active = pathname === href || pathname.startsWith(href + '/')
                         return (

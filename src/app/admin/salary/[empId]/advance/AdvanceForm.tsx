@@ -68,7 +68,8 @@ export default function AdvanceForm({ employeeId, employeeName, month, year }: P
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '12px 14px', borderRadius: '10px',
         border: '1.5px solid #E5E7EB', fontSize: '15px', color: '#111827',
-        background: 'white', outline: 'none', boxSizing: 'border-box', fontWeight: 600,
+        background: '#FFFFFF', boxSizing: 'border-box', fontWeight: 600,
+        colorScheme: 'light',
     }
     const labelStyle: React.CSSProperties = {
         display: 'block', fontWeight: 700, fontSize: '11px', color: '#6B7280',

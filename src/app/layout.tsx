@@ -10,6 +10,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'DDW Attendance',
   },
+  other: {
+    'color-scheme': 'light',
+  },
 }
 
 export const viewport: Viewport = {

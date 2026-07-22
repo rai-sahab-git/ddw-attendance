@@ -80,9 +80,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <header style={{
                 position: 'sticky', top: 0, zIndex: 100,
                 background: 'white', borderBottom: '1px solid #E5E7EB',
-                padding: '10px 16px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
+                <div style={{
+                    maxWidth: 'var(--app-max)',
+                    margin: '0 auto',
+                    width: '100%',
+                    padding: '10px var(--app-pad)',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{
                         width: '32px', height: '32px', borderRadius: '9px',
@@ -93,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
                     <div>
                         <div style={{ fontWeight: 900, fontSize: '15px', color: '#111827', lineHeight: 1 }}>DDW</div>
-                        <div style={{ fontSize: '10px', color: '#9CA3AF', lineHeight: 1 }}>Attendance</div>
+                        <div style={{ fontSize: '10px', color: '#6B7280', lineHeight: 1 }}>Attendance</div>
                     </div>
                 </div>
 
@@ -129,15 +134,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {loggingOut ? '...' : 'Out'}
                     </button>
                 </div>
+                </div>
             </header>
 
             {/* Content */}
-            <main style={{
-                flex: 1, padding: '14px', paddingBottom: '80px',
-                maxWidth: '500px', width: '100%', margin: '0 auto',
-                opacity: navLoading ? 0.55 : 1,
-                transition: 'opacity 0.15s ease',
-            }}>
+            <main
+                className={`app-main${pathname.startsWith('/admin/attendance') ? ' app-main--wide' : ''}`}
+                style={{
+                    opacity: navLoading ? 0.55 : 1,
+                    transition: 'opacity 0.15s ease',
+                }}
+            >
                 {children}
             </main>
 
@@ -146,9 +153,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
                 background: 'white', borderTop: '1px solid #E5E7EB',
                 display: 'flex',
+                justifyContent: 'center',
                 padding: '6px 0',
                 paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
             }}>
+                <div style={{ display: 'flex', width: '100%', maxWidth: 'var(--app-max)' }}>
                 {navItems.map(({ href, icon: Icon, label, badge }) => {
                     const isActive = pathname === href || pathname.startsWith(href + '/')
                     const isLoading = activeNav === href
@@ -209,6 +218,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         </Link>
                     )
                 })}
+                </div>
             </nav>
         </div>
     )

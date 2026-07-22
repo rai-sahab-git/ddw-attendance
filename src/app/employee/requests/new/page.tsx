@@ -60,7 +60,8 @@ export default function NewRequestPage() {
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '12px 14px', borderRadius: '10px',
         border: '1.5px solid #E5E7EB', fontSize: '14px', color: '#111827',
-        background: 'white', outline: 'none', boxSizing: 'border-box',
+        background: '#FFFFFF', boxSizing: 'border-box',
+        colorScheme: 'light',
     }
     const labelStyle: React.CSSProperties = {
         display: 'block', fontWeight: 700, fontSize: '11px', color: '#6B7280',

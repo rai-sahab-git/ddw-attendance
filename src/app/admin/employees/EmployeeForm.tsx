@@ -103,7 +103,8 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '12px 14px', borderRadius: '10px',
         border: '1.5px solid #E5E7EB', fontSize: '14px', color: '#111827',
-        background: 'white', boxSizing: 'border-box',
+        background: '#FFFFFF', boxSizing: 'border-box',
+        colorScheme: 'light',
     }
     const labelStyle: React.CSSProperties = {
         display: 'block', fontWeight: 700, fontSize: '12px', color: '#374151',

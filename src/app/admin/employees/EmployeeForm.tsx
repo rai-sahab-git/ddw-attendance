@@ -1,7 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Employee } from '@/types'
+
+type Warehouse = { id: string; code: string; name: string }
 
 type Props = {
     employee?: Employee
@@ -14,6 +16,7 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
     const [deleting, setDeleting] = useState(false)
     const [msg, setMsg] = useState('')
     const [showDelete, setShowDelete] = useState(false)
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
 
     const [form, setForm] = useState({
         name: employee?.name ?? '',
@@ -24,7 +27,22 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
         joining_date: employee?.joining_date ?? new Date().toISOString().split('T')[0],
         login_pin: '',
         is_active: employee?.is_active ?? true,
+        warehouse_id: employee?.warehouse_id ?? '',
     })
+
+    useEffect(() => {
+        fetch('/api/admin/warehouses')
+            .then(r => r.json())
+            .then(d => {
+                const list = Array.isArray(d.warehouses) ? d.warehouses : []
+                setWarehouses(list)
+                if (!form.warehouse_id && list[0]?.id) {
+                    setForm(prev => ({ ...prev, warehouse_id: list[0].id }))
+                }
+            })
+            .catch(() => {})
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
         const { name, value, type } = e.target
@@ -34,7 +52,6 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
         }))
     }
 
-    // Auto-calculate per_day_rate from monthly_salary
     function handleSalaryChange(e: React.ChangeEvent<HTMLInputElement>) {
         const salary = parseFloat(e.target.value) || 0
         const perDay = salary > 0 ? Math.round((salary / 26) * 100) / 100 : 0
@@ -54,12 +71,12 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                 per_day_rate: parseFloat(form.per_day_rate) || 0,
                 joining_date: form.joining_date,
                 is_active: form.is_active,
+                warehouse_id: form.warehouse_id || null,
             }
-            // Only send PIN when set (on edit, blank = keep existing)
             if (form.login_pin.trim()) {
                 payload.login_pin = form.login_pin.trim()
             } else if (isNew) {
-                setMsg('❌ A 4-digit PIN is required')
+                setMsg('A 4-digit PIN is required')
                 setSaving(false)
                 return
             }
@@ -72,13 +89,13 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
             })
             const data = await res.json()
             if (res.ok) {
-                setMsg('✅ Saved!')
-                setTimeout(() => router.push('/admin/employees'), 800)
+                setMsg('Saved')
+                setTimeout(() => router.push('/admin/employees'), 600)
             } else {
-                setMsg('❌ ' + (data.error ?? 'Save failed'))
+                setMsg(data.error ?? 'Save failed')
             }
         } catch {
-            setMsg('❌ Network error')
+            setMsg('Network error')
         }
         setSaving(false)
     }
@@ -91,46 +108,44 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
             if (res.ok) {
                 router.push('/admin/employees')
             } else {
-                setMsg('❌ ' + (data.error ?? 'Delete failed'))
+                setMsg(data.error ?? 'Delete failed')
                 setShowDelete(false)
             }
         } catch {
-            setMsg('❌ Network error')
+            setMsg('Network error')
         }
         setDeleting(false)
     }
 
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '12px 14px', borderRadius: '10px',
-        border: '1.5px solid #E5E7EB', fontSize: '14px', color: '#111827',
-        background: '#FFFFFF', boxSizing: 'border-box',
-        colorScheme: 'light',
+        border: '1.5px solid var(--border)', fontSize: '14px', color: 'var(--input-text)',
+        background: 'var(--input-bg)', boxSizing: 'border-box',
     }
     const labelStyle: React.CSSProperties = {
-        display: 'block', fontWeight: 700, fontSize: '12px', color: '#374151',
+        display: 'block', fontWeight: 700, fontSize: '12px', color: 'var(--text-muted)',
         marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em',
+    }
+    const cardStyle: React.CSSProperties = {
+        background: 'var(--panel)', borderRadius: '16px', padding: '16px',
+        border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
     }
 
     return (
         <>
-            {/* Delete Confirm Bottom Sheet */}
             {showDelete && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+                <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
                     onClick={() => setShowDelete(false)}>
-                    <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '480px' }}
+                    <div style={{ background: 'var(--panel)', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '480px' }}
                         onClick={e => e.stopPropagation()}>
-                        <div style={{ fontWeight: 800, fontSize: '16px', color: '#111827', marginBottom: '8px', textAlign: 'center' }}>Deactivate Employee?</div>
-                        <div style={{ fontSize: '13px', color: '#6B7280', textAlign: 'center', marginBottom: '20px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text)', marginBottom: '8px', textAlign: 'center' }}>Deactivate Employee?</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '20px' }}>
                             <strong>{employee?.name}</strong> will be marked inactive and hidden from attendance. History is kept.
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                            <button onClick={() => setShowDelete(false)}
-                                style={{ padding: '13px', borderRadius: '12px', background: '#F3F4F6', color: '#374151', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '14px' }}>
-                                Cancel
-                            </button>
-                            <button onClick={handleDelete} disabled={deleting}
-                                style={{ padding: '13px', borderRadius: '12px', background: '#EF4444', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '14px' }}>
-                                {deleting ? 'Deactivating...' : 'Yes, Deactivate'}
+                            <button type="button" onClick={() => setShowDelete(false)} className="btn btn--ghost">Cancel</button>
+                            <button type="button" onClick={handleDelete} disabled={deleting} className="btn btn--danger">
+                                {deleting ? 'Deactivating…' : 'Yes, Deactivate'}
                             </button>
                         </div>
                     </div>
@@ -138,20 +153,16 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
             )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
-                {/* Basic Info */}
-                <div style={{ background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
-                    <div style={{ fontWeight: 800, fontSize: '13px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
                         Basic Info
                     </div>
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div>
                             <label htmlFor="emp-name" style={labelStyle}>Full Name *</label>
                             <input id="emp-name" name="name" required value={form.name} onChange={handleChange}
                                 placeholder="e.g. Ramesh Kumar" style={inputStyle} />
                         </div>
-
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <div>
                                 <label htmlFor="emp-code" style={labelStyle}>Emp Code *</label>
@@ -164,18 +175,27 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                                     placeholder="9876543210" style={inputStyle} />
                             </div>
                         </div>
-
                         <div>
                             <label htmlFor="emp-joining" style={labelStyle}>Joining Date *</label>
                             <input id="emp-joining" name="joining_date" type="date" required value={form.joining_date} onChange={handleChange}
                                 style={inputStyle} />
                         </div>
+                        {warehouses.length > 0 && (
+                            <div>
+                                <label htmlFor="warehouse_id" style={labelStyle}>Warehouse</label>
+                                <select id="warehouse_id" name="warehouse_id" value={form.warehouse_id} onChange={handleChange} style={inputStyle}>
+                                    <option value="">Unassigned</option>
+                                    {warehouses.map(w => (
+                                        <option key={w.id} value={w.id}>{w.code} — {w.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Salary */}
-                <div style={{ background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
-                    <div style={{ fontWeight: 800, fontSize: '13px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
                         Salary
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -183,21 +203,20 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                             <label style={labelStyle}>Monthly Salary (₹) *</label>
                             <input name="monthly_salary" type="number" required min="0" value={form.monthly_salary}
                                 onChange={handleSalaryChange} placeholder="15000" style={inputStyle} />
-                            <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                                 Per day rate auto-calculated (÷26 working days)
                             </div>
                         </div>
                         <div>
                             <label style={labelStyle}>Per Day Rate (₹)</label>
                             <input name="per_day_rate" type="number" min="0" step="0.01" value={form.per_day_rate}
-                                onChange={handleChange} placeholder="Auto" style={{ ...inputStyle, background: '#F9FAFB' }} />
+                                onChange={handleChange} placeholder="Auto" style={{ ...inputStyle, background: 'var(--gray-50)' }} />
                         </div>
                     </div>
                 </div>
 
-                {/* Login PIN */}
-                <div style={{ background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
-                    <div style={{ fontWeight: 800, fontSize: '13px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                <div style={cardStyle}>
+                    <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
                         Employee Login
                     </div>
                     <div>
@@ -215,7 +234,7 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                             placeholder={isNew ? 'e.g. 1234' : 'Leave blank to keep current'}
                             style={inputStyle}
                         />
-                        <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                             {isNew
                                 ? 'Employee uses this PIN to login on their portal'
                                 : 'Leave blank to keep the existing PIN. Enter a new PIN only to change it.'}
@@ -223,25 +242,24 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                     </div>
                 </div>
 
-                {/* Status (edit only) */}
                 {!isNew && (
-                    <div style={{ background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
+                    <div style={cardStyle}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Active Status</div>
-                                <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Inactive employees won't appear in attendance</div>
+                                <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>Active Status</div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Inactive employees won&apos;t appear in attendance</div>
                             </div>
                             <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
                                 <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange}
                                     style={{ opacity: 0, width: 0, height: 0 }} />
                                 <span style={{
                                     position: 'absolute', inset: 0, borderRadius: '13px',
-                                    background: form.is_active ? '#00A651' : '#D1D5DB',
+                                    background: form.is_active ? 'var(--green-primary)' : 'var(--gray-200)',
                                     transition: 'background 0.2s',
                                 }}>
                                     <span style={{
                                         position: 'absolute', top: '3px', left: form.is_active ? '25px' : '3px',
-                                        width: '20px', height: '20px', borderRadius: '50%', background: 'white',
+                                        width: '20px', height: '20px', borderRadius: '50%', background: '#fff',
                                         transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                                     }} />
                                 </span>
@@ -250,30 +268,21 @@ export default function EmployeeForm({ employee, isNew = false }: Props) {
                     </div>
                 )}
 
-                {/* Message */}
                 {msg && (
-                    <div style={{ textAlign: 'center', fontWeight: 700, fontSize: '14px', color: msg.startsWith('✅') ? '#059669' : '#EF4444', padding: '4px' }}>
+                    <div style={{
+                        textAlign: 'center', fontWeight: 700, fontSize: '14px', padding: '4px',
+                        color: msg === 'Saved' ? 'var(--green-dark)' : '#EF4444',
+                    }}>
                         {msg}
                     </div>
                 )}
 
-                {/* Save Button */}
-                <button type="submit" disabled={saving} style={{
-                    width: '100%', padding: '16px', borderRadius: '14px', border: 'none',
-                    background: saving ? '#9CA3AF' : 'linear-gradient(135deg,#00A651,#059669)',
-                    color: 'white', fontWeight: 800, fontSize: '16px', cursor: saving ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 4px 12px rgba(0,166,81,0.3)',
-                }}>
-                    {saving ? '⏳ Saving...' : isNew ? '➕ Add Employee' : '💾 Save Changes'}
+                <button type="submit" disabled={saving} className="btn btn--primary" style={{ width: '100%', padding: '16px', fontSize: 16 }}>
+                    {saving ? 'Saving…' : isNew ? 'Add Employee' : 'Save Changes'}
                 </button>
 
-                {/* Delete Button (edit only) */}
                 {!isNew && (
-                    <button type="button" onClick={() => setShowDelete(true)}
-                        style={{
-                            width: '100%', padding: '14px', borderRadius: '14px', border: '1.5px solid #FCA5A5',
-                            background: 'white', color: '#EF4444', fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-                        }}>
+                    <button type="button" onClick={() => setShowDelete(true)} className="btn btn--danger" style={{ width: '100%' }}>
                         Deactivate Employee
                     </button>
                 )}

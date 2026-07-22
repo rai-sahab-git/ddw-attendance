@@ -11,50 +11,56 @@ Mobile-first PWA for employee attendance and salary management (Divine Digital G
 
 ## Setup
 
-1. Clone the repo and install dependencies:
+1. Clone and install:
 
 ```bash
 npm install
-```
-
-2. Copy env example and fill in Supabase credentials:
-
-```bash
 cp .env.example .env.local
 ```
 
-3. Apply migrations in the Supabase SQL editor (start with [`migrations/v2-migration.sql`](migrations/v2-migration.sql) plus your base schema for `employees`, `attendance_records`, etc.).
+2. Apply SQL migrations in Supabase (in order):
 
-4. Run the dev server:
+- [`migrations/v2-migration.sql`](migrations/v2-migration.sql) — attendance settings
+- [`migrations/v3-multi-tenant.sql`](migrations/v3-multi-tenant.sql) — warehouses, team roles, preferences
+- [`migrations/rls-harden.sql`](migrations/rls-harden.sql) — optional RLS tighten
+
+3. Run:
 
 ```bash
 npm run dev
 ```
 
+## Features
+
+- **Responsive shell** — bottom nav (mobile) / sidebar (desktop)
+- **Appearance** — light / dark / system theme (`/admin/appearance`)
+- **Organization** — multi-warehouse + admin roles (`/admin/organization`)
+- **Reports** — custom Excel packs (`/admin/reports`)
+- **Permissions** — super_admin / admin / manager / viewer (see `src/lib/permissions.ts`)
+- Instant route prefetch for admin tabs
+
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
+| `npm run dev` | Dev server |
 | `npm run build` | Production build |
-| `npm start` | Start production server |
+| `npm start` | Start production |
 | `npm run lint` | ESLint |
-| `npm test` | Unit tests (Vitest) |
+| `npm test` | Vitest |
 
 ## Roles
 
-- **Admin** — Supabase email/password; manages attendance, employees, salary, requests, settings
-- **Employee** — Emp code + 4-digit PIN; views own attendance/salary and submits requests
+| Role | Access |
+|------|--------|
+| super_admin | All warehouses + org management |
+| admin / owner | Full warehouse ops |
+| manager | Attendance, requests, view salary |
+| viewer | Read-only + reports export |
+| employee | Employee portal (PIN) |
 
-## Security notes
+## Security
 
-- All `/api/admin/*` routes require an authenticated admin session (`requireAdminAuth`)
-- Employee PINs are stored hashed (bcrypt); legacy plaintext PINs are re-hashed on next successful login
-- Employee login is rate-limited (5 attempts / 15 minutes per IP + emp code)
-- Never commit `.env.local` or the service role key
-
-## PWA
-
-- Manifest: `public/manifest.json`
-- Service worker: `public/sw.js`
-- Icons: `public/icon-192.png`, `public/icon-512.png`, `public/icon.svg`
+- `/api/admin/*` requires auth + permission checks
+- PINs hashed with bcrypt; rate-limited login
+- Never commit `.env.local` or service role key

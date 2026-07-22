@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { calculateSalary } from '@/lib/salary-calculator'
-import { requireAdminAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 
 const MONTH_NAMES = [
     '', 'January', 'February', 'March', 'April', 'May', 'June',
@@ -9,8 +9,8 @@ const MONTH_NAMES = [
 ]
 
 export async function GET(request: NextRequest) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const auth = await requirePermission('reports:export')
+    if ('error' in auth) return auth.error
 
     try {
         const { searchParams } = request.nextUrl

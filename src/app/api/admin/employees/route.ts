@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireAdminAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 import { hashPin } from '@/lib/pin'
 
 const supabase = createClient(
@@ -8,14 +8,13 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// POST /api/admin/employees — create new employee
 export async function POST(request: NextRequest) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('employees:edit')
+    if ('error' in result) return result.error
 
     try {
         const body = await request.json()
-        const { name, emp_code, phone, monthly_salary, per_day_rate, joining_date, login_pin } = body
+        const { name, emp_code, phone, monthly_salary, per_day_rate, joining_date, login_pin, warehouse_id } = body
 
         if (!name || !emp_code || !monthly_salary || !joining_date) {
             return NextResponse.json({ error: 'Name, emp_code, salary, joining_date are required' }, { status: 400 })
@@ -38,8 +37,9 @@ export async function POST(request: NextRequest) {
                 joining_date,
                 login_pin: hashedPin,
                 is_active: true,
+                warehouse_id: warehouse_id || null,
             })
-            .select('id, name, emp_code, phone, monthly_salary, per_day_rate, joining_date, is_active')
+            .select('id, name, emp_code, phone, monthly_salary, per_day_rate, joining_date, is_active, warehouse_id')
             .single()
 
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })

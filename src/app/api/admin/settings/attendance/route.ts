@@ -1,17 +1,16 @@
 // src/app/api/admin/settings/attendance/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireAdminAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 
 const supa = () => createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// GET — fetch all settings
 export async function GET() {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('settings:view')
+    if ('error' in result) return result.error
 
     try {
         const { data, error } = await supa()
@@ -25,10 +24,9 @@ export async function GET() {
     }
 }
 
-// POST — create new custom type
 export async function POST(request: NextRequest) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('settings:edit')
+    if ('error' in result) return result.error
 
     try {
         const body = await request.json()
@@ -38,7 +36,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'code, label, calc_type required' }, { status: 400 })
         }
 
-        // Code must be uppercase alphanumeric, max 6 chars
         const cleanCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
         if (!cleanCode) return NextResponse.json({ error: 'Invalid code' }, { status: 400 })
 
@@ -61,10 +58,9 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// PUT — update existing type
 export async function PUT(request: NextRequest) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('settings:edit')
+    if ('error' in result) return result.error
 
     try {
         const body = await request.json()
@@ -84,16 +80,14 @@ export async function PUT(request: NextRequest) {
     }
 }
 
-// DELETE — only non-system types
 export async function DELETE(request: NextRequest) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('settings:edit')
+    if ('error' in result) return result.error
 
     try {
         const { id } = await request.json()
         if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-        // Check if system type
         const { data: existing } = await supa()
             .from('attendance_settings')
             .select('is_system')

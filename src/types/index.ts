@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'employee'
+export type UserRole = 'super_admin' | 'admin' | 'manager' | 'viewer' | 'employee'
 
 export type AttendanceStatus = string
 
@@ -14,6 +14,15 @@ export interface Employee {
     has_pin?: boolean
     joining_date: string
     is_active: boolean
+    warehouse_id?: string | null
+}
+
+export interface Warehouse {
+    id: string
+    code: string
+    name: string
+    address?: string
+    is_active: boolean
 }
 
 export interface UserProfile {
@@ -21,8 +30,10 @@ export interface UserProfile {
     employee_id?: string
     role: UserRole
     name?: string
+    display_name?: string
     email?: string
     is_active: boolean
+    is_super_admin?: boolean
 }
 
 export interface AttendanceRecord {

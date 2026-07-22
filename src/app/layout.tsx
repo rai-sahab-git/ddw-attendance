@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
   title: 'DDW Attendance',
@@ -10,38 +11,46 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'DDW Attendance',
   },
-  other: {
-    'color-scheme': 'light',
-  },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#00A651',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#00A651' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F172A' },
+  ],
   width: 'device-width',
   initialScale: 1,
 }
 
+const themeBootScript = `
+(function(){
+  try {
+    var t = localStorage.getItem('ddw-theme') || 'system';
+    var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var r = dark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', r);
+    document.documentElement.style.colorScheme = r;
+  } catch (e) {}
+})();
+`
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        {/* PWA */}
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body>
-        {children}
-        {/* Service Worker Registration */}
+        <Providers>{children}</Providers>
         <script dangerouslySetInnerHTML={{
           __html: `
           if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-              navigator.serviceWorker.register('/sw.js')
-                .then(function(reg) { console.log('SW registered:', reg.scope); })
-                .catch(function(err) { console.log('SW error:', err); });
+              navigator.serviceWorker.register('/sw.js').catch(function(){});
             });
           }
         `}} />

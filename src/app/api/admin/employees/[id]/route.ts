@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireAdminAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 import { hashPin } from '@/lib/pin'
 
 const supabase = createClient(
@@ -8,19 +8,18 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// GET /api/admin/employees/[id] — never returns PIN hash
 export async function GET(
     _request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('employees:view')
+    if ('error' in result) return result.error
 
     try {
         const { id } = await params
         const { data, error } = await supabase
             .from('employees')
-            .select('id, name, emp_code, phone, monthly_salary, per_day_rate, joining_date, is_active, login_pin')
+            .select('id, name, emp_code, phone, monthly_salary, per_day_rate, joining_date, is_active, login_pin, warehouse_id')
             .eq('id', id)
             .single()
 
@@ -35,21 +34,20 @@ export async function GET(
     }
 }
 
-// PUT /api/admin/employees/[id] — update (PIN only updated if provided)
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('employees:edit')
+    if ('error' in result) return result.error
 
     try {
         const { id } = await params
         const body = await request.json()
-        const { name, emp_code, phone, monthly_salary, per_day_rate, joining_date, login_pin, is_active } = body
+        const { name, emp_code, phone, monthly_salary, per_day_rate, joining_date, login_pin, is_active, warehouse_id } = body
 
         const update: Record<string, unknown> = {
             name, emp_code, phone, monthly_salary, per_day_rate, joining_date, is_active,
+            warehouse_id: warehouse_id || null,
         }
 
-        // Only hash & update PIN when a new non-empty value is sent
         if (login_pin != null && String(login_pin).trim() !== '') {
             update.login_pin = await hashPin(String(login_pin))
         }
@@ -66,10 +64,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 }
 
-// DELETE /api/admin/employees/[id] — soft delete (set inactive)
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const result = await requirePermission('employees:edit')
+    if ('error' in result) return result.error
 
     try {
         const { id } = await params

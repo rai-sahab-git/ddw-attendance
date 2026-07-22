@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireAdminAuth } from '@/lib/api-auth'
+import { requirePermission } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const result = await requirePermission('attendance:edit')
+    if ('error' in result) return result.error
 
     try {
         const { records } = await request.json()

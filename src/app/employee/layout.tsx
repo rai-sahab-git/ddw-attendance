@@ -2,9 +2,11 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LayoutDashboard, CalendarCheck, IndianRupee, ClipboardList, LogOut } from 'lucide-react'
+import {
+    LayoutDashboard, CalendarCheck, IndianRupee, ClipboardList, LogOut,
+} from 'lucide-react'
 
-const navItems = [
+const NAV = [
     { href: '/employee/dashboard', icon: LayoutDashboard, label: 'Home' },
     { href: '/employee/attendance', icon: CalendarCheck, label: 'Attendance' },
     { href: '/employee/salary', icon: IndianRupee, label: 'Salary' },
@@ -21,86 +23,103 @@ export default function EmployeeLayout({ children }: { children: React.ReactNode
         router.refresh()
     }
 
+    function isActive(href: string) {
+        return pathname === href || pathname.startsWith(href + '/')
+    }
+
     return (
-        <div style={{ minHeight: '100dvh', background: '#F4F6F9', fontFamily: 'Inter, sans-serif' }}>
-            <header style={{
+        <div className="app-shell app-shell--employee">
+            <header className="app-shell__top" style={{
                 background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-                position: 'sticky', top: 0, zIndex: 50,
-                boxShadow: '0 2px 20px rgba(0,0,0,0.3)',
+                borderBottom: 'none',
             }}>
-                <div className="app-header-inner" style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '0 var(--app-pad)', height: '56px', maxWidth: 'var(--app-max)', margin: '0 auto', width: '100%',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                            width: '34px', height: '34px',
-                            background: 'rgba(255,255,255,0.15)',
-                            borderRadius: '10px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            <span style={{ fontSize: '18px' }} aria-hidden>👤</span>
-                        </div>
-                        <div>
-                            <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '15px', lineHeight: 1 }}>
-                                My Attendance
-                            </div>
-                            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', marginTop: '2px' }}>
-                                Employee Portal
-                            </div>
-                        </div>
+                <div className="app-shell__brand">
+                    <div className="app-shell__brand-icon" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                        <span aria-hidden style={{ fontSize: 16 }}>👤</span>
                     </div>
-                    <button onClick={handleLogout} aria-label="Log out" style={{
-                        width: '36px', height: '36px',
-                        background: 'rgba(255,255,255,0.1)',
-                        borderRadius: '10px', border: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white',
-                    }}>
-                        <LogOut size={18} />
-                    </button>
+                    <div>
+                        <div className="app-shell__brand-title" style={{ color: '#fff' }}>My Attendance</div>
+                        <div className="app-shell__brand-sub" style={{ color: 'rgba(255,255,255,0.65)' }}>Employee Portal</div>
+                    </div>
                 </div>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    aria-label="Log out"
+                    className="btn"
+                    style={{
+                        width: 36, height: 36, padding: 0,
+                        background: 'rgba(255,255,255,0.1)', color: '#fff',
+                    }}
+                >
+                    <LogOut size={18} />
+                </button>
             </header>
 
-            <main className="app-main">
-                {children}
-            </main>
+            <div className="app-shell__body">
+                <aside className="app-shell__sidebar" aria-label="Employee sidebar">
+                    <Link href="/employee/dashboard" className="app-shell__sidebar-brand">
+                        <div className="app-shell__brand-icon">
+                            <CalendarCheck size={16} color="white" />
+                        </div>
+                        <div className="app-shell__sidebar-brand-text">
+                            <div className="title" style={{ fontWeight: 900, fontSize: 15 }}>My Attendance</div>
+                            <div className="sub" style={{ fontSize: 11 }}>Employee portal</div>
+                        </div>
+                    </Link>
 
-            <nav aria-label="Employee navigation" style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0,
-                background: 'white', borderTop: '1px solid #E5E7EB',
-                boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
-                zIndex: 50, paddingBottom: 'env(safe-area-inset-bottom)',
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-around', maxWidth: 'var(--app-max)', margin: '0 auto', width: '100%' }}>
-                    {navItems.map(({ href, icon: Icon, label }) => {
-                        const active = pathname === href || pathname.startsWith(href + '/')
-                        return (
-                            <Link key={href} href={href}
-                                aria-current={active ? 'page' : undefined}
-                                aria-label={label}
-                                style={{
-                                display: 'flex', flexDirection: 'column',
-                                alignItems: 'center', gap: '3px',
-                                padding: '10px 12px',
-                                color: active ? '#1a1a2e' : '#9CA3AF',
-                                textDecoration: 'none', minWidth: '60px',
-                                position: 'relative',
-                            }}>
-                                {active && (
-                                    <span style={{
-                                        position: 'absolute', top: 0, left: '50%',
-                                        transform: 'translateX(-50%)',
-                                        width: '24px', height: '3px',
-                                        background: '#1a1a2e', borderRadius: '0 0 4px 4px',
-                                    }} />
-                                )}
-                                <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-                                <span style={{ fontSize: '10px', fontWeight: active ? 700 : 500 }}>{label}</span>
-                            </Link>
-                        )
-                    })}
-                </div>
+                    <nav className="app-shell__sidebar-nav">
+                        {NAV.map(({ href, icon: Icon, label }) => {
+                            const active = isActive(href)
+                            return (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    className={`app-shell__side-link${active ? ' is-active' : ''}`}
+                                    aria-current={active ? 'page' : undefined}
+                                    title={label}
+                                >
+                                    <Icon size={20} strokeWidth={active ? 2.4 : 1.8} />
+                                    <span>{label}</span>
+                                </Link>
+                            )
+                        })}
+                    </nav>
+
+                    <div className="app-shell__sidebar-footer">
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="app-shell__side-link"
+                            title="Log out"
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', width: '100%' }}
+                        >
+                            <LogOut size={20} color="#FCA5A5" />
+                            <span style={{ color: '#FCA5A5' }}>Log out</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <main className="app-shell__content">{children}</main>
+            </div>
+
+            <nav className="app-shell__bottom" aria-label="Employee navigation">
+                {NAV.map(({ href, icon: Icon, label }) => {
+                    const active = isActive(href)
+                    return (
+                        <Link
+                            key={href}
+                            href={href}
+                            className={`app-shell__tab${active ? ' is-active' : ''}`}
+                            aria-current={active ? 'page' : undefined}
+                            aria-label={label}
+                            style={active ? { color: '#1a1a2e' } : undefined}
+                        >
+                            <Icon size={21} strokeWidth={active ? 2.5 : 1.8} />
+                            {label}
+                        </Link>
+                    )
+                })}
             </nav>
         </div>
     )

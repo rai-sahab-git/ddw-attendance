@@ -102,7 +102,7 @@ export default function AttendanceGrid({
     return (
         <div>
             <div style={{
-                position: 'sticky', top: '60px', zIndex: 50,
+                position: 'sticky', top: 0, zIndex: 50,
                 background: isDirty ? '#FFF7ED' : 'white',
                 borderRadius: '14px', padding: '10px 14px',
                 border: isDirty ? '1.5px solid #FED7AA' : '1px solid #E5E7EB',

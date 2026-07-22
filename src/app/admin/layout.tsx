@@ -1,27 +1,30 @@
 'use client'
+
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, CalendarCheck, Users, IndianRupee, ClipboardList, LogOut, Settings } from 'lucide-react'
+import {
+    LayoutDashboard, CalendarCheck, Users, IndianRupee,
+    ClipboardList, LogOut, Settings,
+} from 'lucide-react'
+
+const NAV = [
+    { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Home' },
+    { href: '/admin/attendance', icon: CalendarCheck, label: 'Attendance' },
+    { href: '/admin/salary', icon: IndianRupee, label: 'Salary' },
+    { href: '/admin/employees', icon: Users, label: 'Employees' },
+    { href: '/admin/requests', icon: ClipboardList, label: 'Requests' },
+]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
 
-    const [navLoading, setNavLoading] = useState(false)
-    const [activeNav, setActiveNav] = useState<string | null>(null)
     const [loggingOut, setLoggingOut] = useState(false)
     const [pendingCount, setPendingCount] = useState(0)
 
-    // Reset loading on route change
-    useEffect(() => {
-        setNavLoading(false)
-        setActiveNav(null)
-    }, [pathname])
-
-    // Fetch pending requests count
     useEffect(() => {
         async function fetchPending() {
             const { count } = await supabase
@@ -31,16 +34,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             setPendingCount(count ?? 0)
         }
         fetchPending()
-        // Refresh every 60 seconds
         const timer = setInterval(fetchPending, 60000)
         return () => clearInterval(timer)
     }, [])
-
-    function handleNavClick(href: string) {
-        if (pathname === href) return
-        setNavLoading(true)
-        setActiveNav(href)
-    }
 
     async function handleLogout() {
         setLoggingOut(true)
@@ -49,176 +45,139 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.refresh()
     }
 
-    const navItems = [
-        { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Home', badge: 0 },
-        { href: '/admin/attendance', icon: CalendarCheck, label: 'Attendance', badge: 0 },
-        { href: '/admin/salary', icon: IndianRupee, label: 'Salary', badge: 0 },
-        { href: '/admin/employees', icon: Users, label: 'Employees', badge: 0 },
-        { href: '/admin/requests', icon: ClipboardList, label: 'Requests', badge: pendingCount },
-    ]
+    function isActive(href: string) {
+        return pathname === href || pathname.startsWith(href + '/')
+    }
+
+    const wide = pathname.startsWith('/admin/attendance')
 
     return (
-        <div style={{ minHeight: '100dvh', background: '#F4F6F9', display: 'flex', flexDirection: 'column' }}>
-
-            {/* Top loading bar */}
-            {navLoading && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, height: '3px', zIndex: 9999,
-                    background: 'linear-gradient(90deg,#00A651,#34D399,#00A651)',
-                    backgroundSize: '200% 100%',
-                    animation: 'loadingBar 1s linear infinite',
-                }} />
-            )}
-
-            <style>{`
-        @keyframes loadingBar { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-height: 500px) { .bottom-nav { display: none !important; } }
-      `}</style>
-
-            {/* Header */}
-            <header style={{
-                position: 'sticky', top: 0, zIndex: 100,
-                background: 'white', borderBottom: '1px solid #E5E7EB',
-            }}>
-                <div style={{
-                    maxWidth: 'var(--app-max)',
-                    margin: '0 auto',
-                    width: '100%',
-                    padding: '10px var(--app-pad)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{
-                        width: '32px', height: '32px', borderRadius: '9px',
-                        background: 'linear-gradient(135deg,#00A651,#059669)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
+        <div className={`app-shell${wide ? ' app-shell--wide' : ''}`}>
+            {/* Mobile top bar */}
+            <header className="app-shell__top">
+                <Link href="/admin/dashboard" className="app-shell__brand">
+                    <div className="app-shell__brand-icon">
                         <CalendarCheck size={16} color="white" />
                     </div>
                     <div>
-                        <div style={{ fontWeight: 900, fontSize: '15px', color: '#111827', lineHeight: 1 }}>DDW</div>
-                        <div style={{ fontSize: '10px', color: '#6B7280', lineHeight: 1 }}>Attendance</div>
+                        <div className="app-shell__brand-title">DDW</div>
+                        <div className="app-shell__brand-sub">Attendance</div>
                     </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {/* Settings */}
-                    <Link href="/admin/settings"
+                </Link>
+                <div className="app-shell__top-actions">
+                    <Link
+                        href="/admin/settings"
+                        className="btn btn--ghost"
                         aria-label="Settings"
                         aria-current={pathname.startsWith('/admin/settings') ? 'page' : undefined}
-                        style={{
-                            width: '34px', height: '34px', borderRadius: '9px',
-                            background: pathname.startsWith('/admin/settings') ? '#F0FDF4' : '#F9FAFB',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: pathname.startsWith('/admin/settings') ? '#00A651' : '#9CA3AF',
-                            border: '1px solid #E5E7EB',
-                        }}>
+                        style={{ width: 36, height: 36, padding: 0 }}
+                    >
                         <Settings size={16} />
                     </Link>
-
-                    {/* Logout */}
-                    <button onClick={handleLogout} disabled={loggingOut}
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                        className="btn btn--danger"
                         aria-label="Log out"
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '5px',
-                            background: '#FEF2F2', color: '#EF4444',
-                            border: 'none', borderRadius: '9px',
-                            padding: '7px 11px', cursor: loggingOut ? 'not-allowed' : 'pointer',
-                            fontWeight: 700, fontSize: '12px',
-                        }}>
-                        {loggingOut
-                            ? <span style={{ width: '13px', height: '13px', border: '2px solid #FECACA', borderTopColor: '#EF4444', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
-                            : <LogOut size={13} />
-                        }
-                        {loggingOut ? '...' : 'Out'}
+                        style={{ padding: '7px 10px', minHeight: 36 }}
+                    >
+                        <LogOut size={13} />
+                        Out
                     </button>
-                </div>
                 </div>
             </header>
 
-            {/* Content */}
-            <main
-                className={`app-main${pathname.startsWith('/admin/attendance') ? ' app-main--wide' : ''}`}
-                style={{
-                    opacity: navLoading ? 0.55 : 1,
-                    transition: 'opacity 0.15s ease',
-                }}
-            >
-                {children}
-            </main>
+            <div className="app-shell__body">
+                {/* Desktop / tablet sidebar */}
+                <aside className="app-shell__sidebar" aria-label="Admin sidebar">
+                    <Link href="/admin/dashboard" className="app-shell__sidebar-brand">
+                        <div className="app-shell__brand-icon">
+                            <CalendarCheck size={16} color="white" />
+                        </div>
+                        <div className="app-shell__sidebar-brand-text">
+                            <div className="app-shell__brand-title">DDW Attendance</div>
+                            <div className="app-shell__brand-sub">Admin console</div>
+                        </div>
+                    </Link>
 
-            {/* Bottom nav */}
-            <nav className="bottom-nav" aria-label="Admin navigation" style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
-                background: 'white', borderTop: '1px solid #E5E7EB',
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '6px 0',
-                paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
-            }}>
-                <div style={{ display: 'flex', width: '100%', maxWidth: 'var(--app-max)' }}>
-                {navItems.map(({ href, icon: Icon, label, badge }) => {
-                    const isActive = pathname === href || pathname.startsWith(href + '/')
-                    const isLoading = activeNav === href
+                    <nav className="app-shell__sidebar-nav">
+                        {NAV.map(({ href, icon: Icon, label }) => {
+                            const active = isActive(href)
+                            const badge = href === '/admin/requests' ? pendingCount : 0
+                            return (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    className={`app-shell__side-link${active ? ' is-active' : ''}`}
+                                    aria-current={active ? 'page' : undefined}
+                                    title={label}
+                                >
+                                    <span style={{ position: 'relative', display: 'inline-flex' }}>
+                                        <Icon size={20} strokeWidth={active ? 2.4 : 1.8} />
+                                        {badge > 0 && (
+                                            <span className="app-shell__badge" style={{ top: -6, right: -10 }}>
+                                                {badge > 99 ? '99+' : badge}
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span>{label}</span>
+                                </Link>
+                            )
+                        })}
+                    </nav>
 
-                    return (
-                        <Link key={href} href={href} onClick={() => handleNavClick(href)}
-                            aria-current={isActive ? 'page' : undefined}
-                            aria-label={badge > 0 ? `${label}, ${badge} pending` : label}
-                            style={{
-                                flex: 1, display: 'flex', flexDirection: 'column',
-                                alignItems: 'center', justifyContent: 'center',
-                                gap: '2px', textDecoration: 'none', padding: '4px 2px',
-                                color: isActive ? '#00A651' : '#9CA3AF',
-                                position: 'relative',
-                            }}
+                    <div className="app-shell__sidebar-footer">
+                        <Link
+                            href="/admin/settings"
+                            className={`app-shell__side-link${pathname.startsWith('/admin/settings') ? ' is-active' : ''}`}
+                            title="Settings"
                         >
-                            {/* Active top indicator */}
-                            {isActive && (
-                                <div style={{
-                                    position: 'absolute', top: '-6px',
-                                    width: '18px', height: '3px', borderRadius: '0 0 3px 3px',
-                                    background: '#00A651',
-                                }} />
-                            )}
+                            <Settings size={20} />
+                            <span>Settings</span>
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            disabled={loggingOut}
+                            className="app-shell__side-link"
+                            title="Log out"
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', width: '100%' }}
+                        >
+                            <LogOut size={20} color="#EF4444" />
+                            <span style={{ color: '#EF4444' }}>{loggingOut ? '…' : 'Log out'}</span>
+                        </button>
+                    </div>
+                </aside>
 
-                            {/* Icon or spinner */}
-                            <div style={{ position: 'relative' }}>
-                                {isLoading ? (
-                                    <span style={{
-                                        width: '22px', height: '22px',
-                                        border: '2px solid #E5E7EB', borderTopColor: '#00A651',
-                                        borderRadius: '50%', display: 'inline-block',
-                                        animation: 'spin 0.7s linear infinite',
-                                    }} />
-                                ) : (
-                                    <Icon size={21} strokeWidth={isActive ? 2.5 : 1.8} />
-                                )}
+                <main className="app-shell__content">{children}</main>
+            </div>
 
-                                {/* Pending badge */}
-                                {badge > 0 && !isLoading && (
-                                    <div style={{
-                                        position: 'absolute', top: '-5px', right: '-7px',
-                                        background: '#EF4444', color: 'white',
-                                        borderRadius: '99px', fontSize: '9px', fontWeight: 900,
-                                        minWidth: '16px', height: '16px',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        padding: '0 3px', border: '2px solid white',
-                                        lineHeight: 1,
-                                    }}>
+            {/* Mobile bottom nav */}
+            <nav className="app-shell__bottom" aria-label="Admin navigation">
+                {NAV.map(({ href, icon: Icon, label }) => {
+                    const active = isActive(href)
+                    const badge = href === '/admin/requests' ? pendingCount : 0
+                    return (
+                        <Link
+                            key={href}
+                            href={href}
+                            className={`app-shell__tab${active ? ' is-active' : ''}`}
+                            aria-current={active ? 'page' : undefined}
+                            aria-label={badge > 0 ? `${label}, ${badge} pending` : label}
+                        >
+                            <span style={{ position: 'relative' }}>
+                                <Icon size={21} strokeWidth={active ? 2.5 : 1.8} />
+                                {badge > 0 && (
+                                    <span className="app-shell__badge">
                                         {badge > 99 ? '99+' : badge}
-                                    </div>
+                                    </span>
                                 )}
-                            </div>
-
-                            <span style={{ fontSize: '10px', fontWeight: isActive ? 800 : 500, lineHeight: 1 }}>
-                                {label}
                             </span>
+                            {label}
                         </Link>
                     )
                 })}
-                </div>
             </nav>
         </div>
     )

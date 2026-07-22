@@ -78,24 +78,32 @@ export default function RequestsClient({ requests, counts }: { requests: Request
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-            {/* ── BOTTOM SHEET MODAL ── */}
+            <div className="page-head">
+                <div>
+                    <h1>Requests</h1>
+                    <p>{counts.pending} pending · {counts.approved} approved · {counts.rejected} rejected</p>
+                </div>
+            </div>
+
+            {/* ── BOTTOM SHEET / CENTER MODAL ── */}
             {actionItem && (
                 <div
                     style={{
                         position: 'fixed', inset: 0, zIndex: 9999,
                         background: 'rgba(0,0,0,0.5)',
-                        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 16,
                     }}
                     onClick={() => setActionItem(null)}
                 >
                     <div
                         style={{
                             background: 'white',
-                            borderRadius: '24px 24px 0 0',
-                            width: '100%', maxWidth: '480px',
-                            maxHeight: '80vh',
+                            borderRadius: 20,
+                            width: '100%', maxWidth: 480,
+                            maxHeight: '85vh',
                             overflowY: 'auto',
-                            padding: '8px 20px 100px',   /* top handle gap + bottom nav clearance */
+                            padding: '8px 20px 24px',
                         }}
                         onClick={e => e.stopPropagation()}
                     >
@@ -227,33 +235,16 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                 </div>
             )}
 
-            {/* ── HEADER ── */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                    <h1 style={{ fontWeight: 800, fontSize: '22px', color: '#111827', margin: 0 }}>Requests</h1>
-                    <p style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>Attendance correction requests</p>
-                </div>
-                {counts.pending > 0 && (
-                    <div style={{
-                        background: '#FEF3C7', color: '#B45309',
-                        borderRadius: '20px', padding: '6px 14px',
-                        fontWeight: 800, fontSize: '13px',
-                    }}>
-                        {counts.pending} pending
-                    </div>
-                )}
-            </div>
-
             {/* ── STATS ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+            <div className="kpi-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                 {[
                     { label: 'Pending', value: counts.pending, bg: '#FEF3C7', color: '#D97706' },
                     { label: 'Approved', value: counts.approved, bg: '#F0FDF4', color: '#059669' },
                     { label: 'Rejected', value: counts.rejected, bg: '#FEF2F2', color: '#EF4444' },
                 ].map(({ label, value, bg, color }) => (
-                    <div key={label} style={{ background: bg, borderRadius: '14px', padding: '14px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '24px', fontWeight: 900, color }}>{value}</div>
-                        <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>{label}</div>
+                    <div key={label} className="kpi-card" style={{ background: bg, textAlign: 'center' }}>
+                        <div className="kpi-card__value" style={{ color }}>{value}</div>
+                        <div className="kpi-card__label">{label}</div>
                     </div>
                 ))}
             </div>

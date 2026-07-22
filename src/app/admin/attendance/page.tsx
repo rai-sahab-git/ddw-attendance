@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { CalendarCheck, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getMonthName } from '@/lib/utils'
 import AttendanceGrid from './AttendanceGrid'
-import ExportButton from '@/components/ExportButton'  // ← NEW
+import ExportButton from '@/components/ExportButton'
 
 export default async function AttendancePage({
   searchParams,
@@ -34,71 +34,57 @@ export default async function AttendancePage({
   const daysInMonth = new Date(year, month, 0).getDate()
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-      {/* ─── Header ─── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div className="att-layout">
+      <div className="page-head">
         <div>
-          <h1 style={{ fontWeight: 800, fontSize: '22px', color: '#111827', margin: 0 }}>Attendance</h1>
-          <p style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>Monthly grid view</p>
+          <h1>Attendance</h1>
+          <p>Monthly grid view</p>
         </div>
-
-        {/* ↓ MARK TODAY + EXPORT — header ke right side mein */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* ↓ EXPORT BUTTON — NEW */}
+        <div className="page-head__actions">
           <ExportButton month={month} year={year} label="Excel" />
-
-          <Link href="/admin/attendance/mark" style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: 'linear-gradient(135deg,#00A651,#059669)', color: 'white',
-            padding: '10px 16px', borderRadius: '12px', textDecoration: 'none',
-            fontWeight: 700, fontSize: '13px', boxShadow: '0 2px 8px rgba(0,166,81,0.3)',
-          }}>
+          <Link href="/admin/attendance/mark" className="btn btn--primary">
             <CalendarCheck size={16} /> Mark Today
           </Link>
         </div>
       </div>
 
-      {/* ─── Stats ─── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+      <div className="kpi-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         {[
           { label: 'Total Employees', value: totalEmp ?? 0, bg: '#F0FDF4', color: '#059669' },
           { label: 'Today Present', value: todayPresent, bg: '#EFF6FF', color: '#2563EB' },
           { label: 'Days in Month', value: daysInMonth, bg: '#FFF7ED', color: '#EA580C' },
         ].map(({ label, value, bg, color }) => (
-          <div key={label} style={{ background: bg, borderRadius: '14px', padding: '14px 12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '26px', fontWeight: 900, color }}>{value}</div>
-            <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px', lineHeight: '1.3' }}>{label}</div>
+          <div key={label} className="kpi-card" style={{ background: bg, textAlign: 'center' }}>
+            <div className="kpi-card__value" style={{ color }}>{value}</div>
+            <div className="kpi-card__label">{label}</div>
           </div>
         ))}
       </div>
 
-      {/* ─── Month Navigator ─── */}
-      <div style={{ background: 'linear-gradient(135deg,#1a1a2e,#16213e)', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href={`/admin/attendance?month=${prevDate.getMonth() + 1}&year=${prevDate.getFullYear()}`}
-          style={{ color: 'white', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+      <div className="month-strip">
+        <Link href={`/admin/attendance?month=${prevDate.getMonth() + 1}&year=${prevDate.getFullYear()}`}>
           <ChevronLeft size={18} />
         </Link>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 800, fontSize: '18px', color: 'white' }}>{getMonthName(month)} {year}</div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>{daysInMonth} days</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>{getMonthName(month)} {year}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{daysInMonth} days</div>
         </div>
-        <Link href={`/admin/attendance?month=${nextDate.getMonth() + 1}&year=${nextDate.getFullYear()}`}
-          style={{ color: 'white', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+        <Link href={`/admin/attendance?month=${nextDate.getMonth() + 1}&year=${nextDate.getFullYear()}`}>
           <ChevronRight size={18} />
         </Link>
       </div>
 
-      {/* ─── Attendance Grid ─── */}
-      <AttendanceGrid
-        employees={employees ?? []}
-        attendance={attendance ?? []}
-        month={month}
-        year={year}
-        daysInMonth={daysInMonth}
-        today={todayStr}
-        settings={settings ?? undefined}
-      />
+      <div className="att-grid-shell" style={{ minWidth: 0 }}>
+        <AttendanceGrid
+          employees={employees ?? []}
+          attendance={attendance ?? []}
+          month={month}
+          year={year}
+          daysInMonth={daysInMonth}
+          today={todayStr}
+          settings={settings ?? undefined}
+        />
+      </div>
     </div>
   )
 }

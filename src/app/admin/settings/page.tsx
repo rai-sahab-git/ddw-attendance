@@ -153,15 +153,12 @@ export default function AttendanceSettingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="page-head">
                 <div>
-                    <h1 style={{ fontWeight: 900, fontSize: '22px', color: '#111827', margin: 0 }}>
-                        Attendance Settings
-                    </h1>
-                    <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '2px' }}>
-                        Custom attendance types & salary rules
-                    </p>
+                    <h1>Attendance Settings</h1>
+                    <p>Custom attendance types & salary rules</p>
                 </div>
+                <div className="page-head__actions">
                 <button onClick={openAdd} style={{
                     display: 'flex', alignItems: 'center', gap: '5px',
                     background: 'linear-gradient(135deg,#00A651,#059669)',
@@ -171,6 +168,7 @@ export default function AttendanceSettingsPage() {
                 }}>
                     <Plus size={16} /> Add Type
                 </button>
+                </div>
             </div>
 
             {msg && (

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { getMonthName, formatCurrency } from '@/lib/utils'
 import { calculateSalary } from '@/lib/salary-calculator'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import ExportButton from '@/components/ExportButton'  // ← NEW
+import ExportButton from '@/components/ExportButton'
 
 export default async function SalaryPage({
     searchParams,
@@ -70,105 +70,140 @@ export default async function SalaryPage({
     const totalPaid = summaries.reduce((s, r) => s + r.paidAmount, 0)
     const totalBalance = summaries.reduce((s, r) => s + r.balanceAmount, 0)
 
+    function statusBadge(s: typeof summaries[0]) {
+        const isFullyPaid = s.paidAmount > 0 && s.balanceAmount <= 0
+        if (isFullyPaid) return { label: 'Paid', bg: '#DCFCE7', color: '#059669' }
+        if (s.paidAmount > 0) return { label: `Bal ${formatCurrency(s.balanceAmount)}`, bg: '#FEE2E2', color: '#EF4444' }
+        return { label: 'Unpaid', bg: '#FEF3C7', color: '#B45309' }
+    }
+
     return (
         <div>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div className="page-head">
                 <div>
-                    <h1 style={{ fontWeight: 800, fontSize: '22px', color: '#111827', margin: 0 }}>Salary</h1>
-                    <p style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>Monthly calculation</p>
+                    <h1>Salary</h1>
+                    <p>Monthly calculation</p>
                 </div>
-                {/* ↓ EXPORT BUTTON — header ke right side mein */}
-                <ExportButton month={month} year={year} label="Excel" />
+                <div className="page-head__actions">
+                    <ExportButton month={month} year={year} label="Excel" />
+                </div>
             </div>
 
-            {/* Month nav */}
-            <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: 'linear-gradient(135deg,#1a1a2e,#16213e)',
-                borderRadius: '16px', padding: '14px 16px', marginBottom: '14px',
-            }}>
-                <Link href={`/admin/salary?month=${prevDate.getMonth() + 1}&year=${prevDate.getFullYear()}`}
-                    style={{ color: 'white', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <div className="month-strip">
+                <Link href={`/admin/salary?month=${prevDate.getMonth() + 1}&year=${prevDate.getFullYear()}`}>
                     <ChevronLeft size={18} />
                 </Link>
                 <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 800, fontSize: '18px', color: 'white' }}>{getMonthName(month)} {year}</div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>{summaries.length} employees</div>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{getMonthName(month)} {year}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{summaries.length} employees</div>
                 </div>
-                <Link href={`/admin/salary?month=${nextDate.getMonth() + 1}&year=${nextDate.getFullYear()}`}
-                    style={{ color: 'white', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                <Link href={`/admin/salary?month=${nextDate.getMonth() + 1}&year=${nextDate.getFullYear()}`}>
                     <ChevronRight size={18} />
                 </Link>
             </div>
 
-            {/* Summary cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+            <div className="kpi-row" style={{ marginBottom: 14, gridTemplateColumns: 'repeat(3, 1fr)' }}>
                 {[
-                    { label: 'Total Payable', value: formatCurrency(totalPayable), color: '#34D399', bg: '#F0FDF4' },
-                    { label: 'Total Paid', value: formatCurrency(totalPaid), color: '#60A5FA', bg: '#EFF6FF' },
-                    { label: 'Balance Due', value: formatCurrency(totalBalance), color: totalBalance > 0 ? '#EF4444' : '#34D399', bg: totalBalance > 0 ? '#FEF2F2' : '#F0FDF4' },
+                    { label: 'Total Payable', value: formatCurrency(totalPayable), color: '#059669', bg: '#F0FDF4' },
+                    { label: 'Total Paid', value: formatCurrency(totalPaid), color: '#2563EB', bg: '#EFF6FF' },
+                    { label: 'Balance Due', value: formatCurrency(totalBalance), color: totalBalance > 0 ? '#EF4444' : '#059669', bg: totalBalance > 0 ? '#FEF2F2' : '#F0FDF4' },
                 ].map(({ label, value, color, bg }) => (
-                    <div key={label} style={{ background: bg, borderRadius: '14px', padding: '12px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 900, color }}>{value}</div>
-                        <div style={{ fontSize: '10px', color: '#6B7280', marginTop: '3px' }}>{label}</div>
+                    <div key={label} className="kpi-card" style={{ background: bg, textAlign: 'center' }}>
+                        <div className="kpi-card__value" style={{ color, fontSize: 16 }}>{value}</div>
+                        <div className="kpi-card__label">{label}</div>
                     </div>
                 ))}
             </div>
 
-            {/* Employee salary cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Desktop table */}
+            <div className="data-table-wrap">
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Payable</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {summaries.map(s => {
+                            const badge = statusBadge(s)
+                            return (
+                                <tr key={s.employee.id}>
+                                    <td>
+                                        <Link
+                                            href={`/admin/salary/${s.employee.id}?month=${month}&year=${year}`}
+                                            className="row-link"
+                                        >
+                                            {s.employee.name}
+                                        </Link>
+                                        <div style={{ fontSize: 11, color: '#94A3B8' }}>{s.employee.emp_code}</div>
+                                    </td>
+                                    <td>{s.presentDays}</td>
+                                    <td style={{ color: s.absentDays > 0 ? '#EF4444' : undefined }}>{s.absentDays}</td>
+                                    <td style={{ fontWeight: 800, color: '#00A651' }}>{formatCurrency(s.payableAmount)}</td>
+                                    <td>{formatCurrency(s.paidAmount)}</td>
+                                    <td style={{ fontWeight: 700, color: s.balanceAmount > 0 ? '#EF4444' : '#059669' }}>
+                                        {formatCurrency(s.balanceAmount)}
+                                    </td>
+                                    <td>
+                                        <span style={{
+                                            fontSize: 11, fontWeight: 800, borderRadius: 999,
+                                            padding: '3px 10px', background: badge.bg, color: badge.color,
+                                        }}>
+                                            {badge.label}
+                                        </span>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="card-list card-list--desktop-hide" style={{ marginTop: 0 }}>
                 {summaries.map(s => {
                     const initials = s.employee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
                     const hasBalance = s.balanceAmount > 0
                     const isFullyPaid = s.paidAmount > 0 && s.balanceAmount <= 0
+                    const badge = statusBadge(s)
 
                     return (
                         <Link key={s.employee.id} href={`/admin/salary/${s.employee.id}?month=${month}&year=${year}`}
                             style={{ textDecoration: 'none' }}>
                             <div style={{
-                                background: 'white', borderRadius: '14px', padding: '14px',
+                                background: 'white', borderRadius: 14, padding: 14,
                                 boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
                                 borderLeft: `4px solid ${isFullyPaid ? '#00A651' : hasBalance ? '#EF4444' : '#E5E7EB'}`,
                             }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                         <div style={{
-                                            width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0,
+                                            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
                                             background: 'linear-gradient(135deg,#00A651,#059669)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'white', fontWeight: 800, fontSize: '13px',
+                                            color: 'white', fontWeight: 800, fontSize: 13,
                                         }}>{initials}</div>
                                         <div>
-                                            <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>{s.employee.name}</div>
-                                            <div style={{ fontSize: '11px', color: '#9CA3AF' }}>
-                                                {s.employee.emp_code}
-                                                &nbsp;•&nbsp;✓ {s.presentDays}d
-                                                {s.absentDays > 0 && <span style={{ color: '#EF4444' }}>&nbsp;✗ {s.absentDays}d</span>}
+                                            <div style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>{s.employee.name}</div>
+                                            <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                                                {s.employee.emp_code} · ✓ {s.presentDays}d
+                                                {s.absentDays > 0 && <span style={{ color: '#EF4444' }}> · ✗ {s.absentDays}d</span>}
                                             </div>
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '18px', fontWeight: 900, color: '#00A651' }}>{formatCurrency(s.payableAmount)}</div>
-                                        {isFullyPaid
-                                            ? <span style={{ background: '#DCFCE7', color: '#059669', borderRadius: '20px', padding: '2px 8px', fontSize: '10px', fontWeight: 800 }}>Paid ✓</span>
-                                            : s.paidAmount > 0
-                                                ? <span style={{ background: '#FEE2E2', color: '#EF4444', borderRadius: '20px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>Bal: {formatCurrency(s.balanceAmount)}</span>
-                                                : <span style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '20px', padding: '2px 8px', fontSize: '10px', fontWeight: 700 }}>Unpaid</span>
-                                        }
+                                        <div style={{ fontSize: 18, fontWeight: 900, color: '#00A651' }}>{formatCurrency(s.payableAmount)}</div>
+                                        <span style={{
+                                            background: badge.bg, color: badge.color, borderRadius: 20,
+                                            padding: '2px 8px', fontSize: 10, fontWeight: 800,
+                                        }}>{badge.label}</span>
                                     </div>
-                                </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingTop: '8px', borderTop: '1px solid #F3F4F6' }}>
-                                    {[
-                                        { label: 'Base', value: formatCurrency(s.employee.monthly_salary), color: '#6B7280' },
-                                        { label: 'Deduction', value: `-${formatCurrency(s.absentDeduction + s.halfdayDeduction)}`, color: '#EF4444' },
-                                        ...(s.otAmount > 0 ? [{ label: 'OT', value: `+${formatCurrency(s.otAmount)}`, color: '#F97316' }] : []),
-                                        ...(s.advanceTotal > 0 ? [{ label: 'Advance', value: `-${formatCurrency(s.advanceTotal)}`, color: '#8B5CF6' }] : []),
-                                    ].map((item) => (
-                                        <span key={item.label} style={{ fontSize: '11px', color: item.color, background: '#F9FAFB', borderRadius: '6px', padding: '2px 8px' }}>
-                                            {item.label}: {item.value}
-                                        </span>
-                                    ))}
                                 </div>
                             </div>
                         </Link>

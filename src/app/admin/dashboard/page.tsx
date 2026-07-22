@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Users, CalendarCheck, IndianRupee, ClipboardList, AlertCircle } from 'lucide-react'
+import { Users, CalendarCheck, IndianRupee, ClipboardList, AlertCircle, Settings } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -9,17 +10,23 @@ export default async function DashboardPage() {
     const month = today.getMonth() + 1
     const year = today.getFullYear()
 
-    // ── PARALLEL queries (was sequential before) ──
     const [
         { count: totalEmp },
         { data: todayAtt },
         { count: pendingReq },
         { data: unpaidSalary },
+        { data: recentRequests },
     ] = await Promise.all([
         supabase.from('employees').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('attendance_records').select('employee_id, status').eq('date', todayStr),
         supabase.from('attendance_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('monthly_salary').select('balance_amount').eq('month', month).eq('year', year).gt('balance_amount', 0),
+        supabase
+            .from('attendance_requests')
+            .select('id, request_type, status, date_from, created_at, employees(name, emp_code)')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(5),
     ])
 
     const presentToday = todayAtt?.filter(r => ['P', '2P', 'OT', '2OT'].includes(r.status)).length ?? 0
@@ -28,128 +35,156 @@ export default async function DashboardPage() {
     const totalBalance = unpaidSalary?.reduce((s, r) => s + (r.balance_amount ?? 0), 0) ?? 0
 
     const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const greeting = today.getHours() < 12 ? 'Morning' : today.getHours() < 17 ? 'Afternoon' : 'Evening'
+
+    const actions = [
+        { href: '/admin/attendance/mark', icon: CalendarCheck, label: 'Mark Attendance', sub: "Today's attendance", color: '#00A651', bg: '#F0FDF4' },
+        { href: '/admin/salary', icon: IndianRupee, label: 'Salary Sheet', sub: `${MONTH_NAMES[month]} ${year}`, color: '#2563EB', bg: '#EFF6FF' },
+        { href: '/admin/employees', icon: Users, label: 'Employees', sub: `${totalEmp ?? 0} active`, color: '#7C3AED', bg: '#F5F3FF' },
+        { href: '/admin/requests', icon: ClipboardList, label: 'Requests', sub: `${pendingReq ?? 0} pending`, color: '#D97706', bg: '#FFFBEB' },
+    ]
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-            {/* Greeting */}
-            <div style={{
-                background: 'linear-gradient(135deg,#1a1a2e,#16213e)',
-                borderRadius: '20px', padding: '20px 18px',
-            }}>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '4px' }}>
-                    {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="page-head">
+                <div>
+                    <p style={{ margin: 0, fontSize: 13, color: '#64748B' }}>
+                        {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </p>
+                    <h1>Good {greeting}</h1>
+                    <p>DDW Attendance — Admin</p>
                 </div>
-                <div style={{ color: 'white', fontWeight: 900, fontSize: '22px' }}>
-                    Good {today.getHours() < 12 ? 'Morning' : today.getHours() < 17 ? 'Afternoon' : 'Evening'} 👋
-                </div>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginTop: '4px' }}>
-                    DDW Attendance — Admin
-                </div>
-
-                {/* Today's quick stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '16px' }}>
-                    {[
-                        { label: 'Present', value: presentToday, color: '#34D399' },
-                        { label: 'Not Marked', value: notMarked, color: notMarked > 0 ? '#FCA5A5' : '#34D399' },
-                        { label: 'Pending Req', value: pendingReq ?? 0, color: (pendingReq ?? 0) > 0 ? '#FCD34D' : '#34D399' },
-                    ].map(({ label, value, color }) => (
-                        <div key={label} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '22px', fontWeight: 900, color }}>{value}</div>
-                            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '2px', lineHeight: 1.2 }}>{label}</div>
-                        </div>
-                    ))}
+                <div className="page-head__actions">
+                    <Link href="/admin/attendance/mark" className="btn btn--primary">
+                        <CalendarCheck size={16} /> Mark Today
+                    </Link>
                 </div>
             </div>
 
-            {/* Pending requests alert */}
+            <div className="kpi-row">
+                {[
+                    { label: 'Present today', value: presentToday, color: '#059669' },
+                    { label: 'Not marked', value: notMarked, color: notMarked > 0 ? '#DC2626' : '#059669' },
+                    { label: 'Pending requests', value: pendingReq ?? 0, color: (pendingReq ?? 0) > 0 ? '#D97706' : '#059669' },
+                    { label: 'Balance due', value: formatCurrency(totalBalance), color: totalBalance > 0 ? '#DC2626' : '#059669' },
+                ].map(({ label, value, color }) => (
+                    <div key={label} className="kpi-card">
+                        <div className="kpi-card__value" style={{ color }}>{value}</div>
+                        <div className="kpi-card__label">{label}</div>
+                    </div>
+                ))}
+            </div>
+
             {(pendingReq ?? 0) > 0 && (
                 <Link href="/admin/requests" style={{ textDecoration: 'none' }}>
                     <div style={{
-                        background: '#FFFBEB', borderRadius: '14px', padding: '12px 14px',
+                        background: '#FFFBEB', borderRadius: 14, padding: '12px 14px',
                         border: '1.5px solid #FDE68A',
-                        display: 'flex', alignItems: 'center', gap: '10px',
+                        display: 'flex', alignItems: 'center', gap: 10,
                     }}>
                         <AlertCircle size={18} color="#D97706" />
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 800, fontSize: '13px', color: '#92400E' }}>
+                            <div style={{ fontWeight: 800, fontSize: 13, color: '#92400E' }}>
                                 {pendingReq} pending request{(pendingReq ?? 0) > 1 ? 's' : ''} to review
                             </div>
-                            <div style={{ fontSize: '11px', color: '#B45309', marginTop: '1px' }}>Tap to review →</div>
+                            <div style={{ fontSize: 11, color: '#B45309', marginTop: 1 }}>Open requests →</div>
                         </div>
                     </div>
                 </Link>
             )}
 
-            {/* Quick actions */}
-            <div>
-                <div style={{ fontWeight: 800, fontSize: '13px', color: '#6B7280', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Quick Actions
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    {[
-                        { href: '/admin/attendance/mark', icon: CalendarCheck, label: 'Mark Attendance', sub: 'Today\'s attendance', color: '#00A651', bg: '#F0FDF4' },
-                        { href: '/admin/salary', icon: IndianRupee, label: 'Salary Sheet', sub: `${MONTH_NAMES[month]} ${year}`, color: '#2563EB', bg: '#EFF6FF' },
-                        { href: '/admin/employees', icon: Users, label: 'Employees', sub: `${totalEmp ?? 0} active`, color: '#7C3AED', bg: '#F5F3FF' },
-                        { href: '/admin/requests', icon: ClipboardList, label: 'Requests', sub: `${pendingReq ?? 0} pending`, color: '#D97706', bg: '#FFFBEB' },
-                    ].map(({ href, icon: Icon, label, sub, color, bg }) => (
-                        <Link key={href} href={href} style={{ textDecoration: 'none' }}>
-                            <div style={{
-                                background: bg, borderRadius: '16px', padding: '16px 14px',
-                                border: `1px solid ${color}22`,
-                                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                            }}>
+            <div className="dash-grid">
+                <div>
+                    <div style={{ fontWeight: 800, fontSize: 12, color: '#64748B', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Quick Actions
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        {actions.map(({ href, icon: Icon, label, sub, color, bg }) => (
+                            <Link key={href} href={href} style={{ textDecoration: 'none' }}>
                                 <div style={{
-                                    width: '38px', height: '38px', borderRadius: '10px',
-                                    background: `${color}18`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    marginBottom: '10px',
+                                    background: bg, borderRadius: 16, padding: '16px 14px',
+                                    border: `1px solid ${color}22`, height: '100%',
                                 }}>
-                                    <Icon size={20} color={color} />
+                                    <div style={{
+                                        width: 38, height: 38, borderRadius: 10,
+                                        background: `${color}18`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        marginBottom: 10,
+                                    }}>
+                                        <Icon size={20} color={color} />
+                                    </div>
+                                    <div style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>{label}</div>
+                                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{sub}</div>
                                 </div>
-                                <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>{label}</div>
-                                <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>{sub}</div>
+                            </Link>
+                        ))}
+                    </div>
+
+                    <Link href="/admin/settings" style={{ textDecoration: 'none', display: 'block', marginTop: 12 }}>
+                        <div className="panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Settings size={18} color="#64748B" />
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>Attendance Settings</div>
+                                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>Custom types, OT rules, salary rules</div>
+                                </div>
                             </div>
+                            <span style={{ color: '#D1D5DB', fontSize: 18 }}>›</span>
+                        </div>
+                    </Link>
+                </div>
+
+                <div className="panel" style={{ minHeight: 200 }}>
+                    <div className="panel__head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Pending requests</span>
+                        <Link href="/admin/requests" style={{ color: '#00A651', fontSize: 12, fontWeight: 700, textDecoration: 'none', textTransform: 'none', letterSpacing: 0 }}>
+                            View all
                         </Link>
-                    ))}
+                    </div>
+                    <div className="panel__body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {(!recentRequests || recentRequests.length === 0) && (
+                            <div style={{ color: '#9CA3AF', fontSize: 13, padding: '20px 0', textAlign: 'center' }}>
+                                No pending requests
+                            </div>
+                        )}
+                        {recentRequests?.map((req) => {
+                            const emp = req.employees as unknown as { name?: string; emp_code?: string } | null
+                            return (
+                                <Link
+                                    key={req.id}
+                                    href="/admin/requests"
+                                    style={{
+                                        textDecoration: 'none',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '10px 12px',
+                                        borderRadius: 12,
+                                        background: '#F8FAFC',
+                                        border: '1px solid #F1F5F9',
+                                    }}
+                                >
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>
+                                            {emp?.name ?? 'Employee'}
+                                        </div>
+                                        <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                                            {req.request_type?.replace('_', ' ')} · {req.date_from}
+                                        </div>
+                                    </div>
+                                    <span style={{
+                                        fontSize: 10, fontWeight: 800, color: '#B45309',
+                                        background: '#FEF3C7', padding: '3px 8px', borderRadius: 999,
+                                        textTransform: 'uppercase',
+                                    }}>
+                                        Pending
+                                    </span>
+                                </Link>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
-
-            {/* Salary balance alert */}
-            {totalBalance > 0 && (
-                <Link href="/admin/salary" style={{ textDecoration: 'none' }}>
-                    <div style={{
-                        background: '#FEF2F2', borderRadius: '14px', padding: '12px 14px',
-                        border: '1.5px solid #FECACA',
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                    }}>
-                        <IndianRupee size={18} color="#EF4444" />
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 800, fontSize: '13px', color: '#991B1B' }}>
-                                ₹{totalBalance.toLocaleString('en-IN')} salary balance due
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#EF4444', marginTop: '1px' }}>{MONTH_NAMES[month]} {year} — Tap to view →</div>
-                        </div>
-                    </div>
-                </Link>
-            )}
-
-            {/* Settings shortcut */}
-            <Link href="/admin/settings" style={{ textDecoration: 'none' }}>
-                <div style={{
-                    background: 'white', borderRadius: '14px', padding: '14px',
-                    border: '1px solid #E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
-                    <div>
-                        <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>⚙️ Attendance Settings</div>
-                        <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
-                            Custom types, OT rules, salary rules
-                        </div>
-                    </div>
-                    <div style={{ fontSize: '18px', color: '#D1D5DB' }}>›</div>
-                </div>
-            </Link>
         </div>
     )
 }

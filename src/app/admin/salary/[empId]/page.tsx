@@ -66,13 +66,13 @@ export default async function SalaryDetailPage({
                 <Link href="/admin/salary" style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     width: '36px', height: '36px', borderRadius: '10px',
-                    background: '#F3F4F6', color: '#374151',
+                    background: 'var(--gray-50)', color: 'var(--text)',
                 }}>
                     <ChevronLeft size={20} />
                 </Link>
                 <div>
-                    <h1 style={{ fontWeight: 900, fontSize: '20px', color: '#111827', margin: 0 }}>{employee.name}</h1>
-                    <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
+                    <h1 style={{ fontWeight: 900, fontSize: '20px', color: 'var(--text)', margin: 0 }}>{employee.name}</h1>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
                         {getMonthName(month)} {year} · {employee.emp_code}
                     </p>
                 </div>
@@ -105,11 +105,11 @@ export default async function SalaryDetailPage({
 
             {/* Advance History */}
             <div style={{
-                background: 'white', borderRadius: '16px', padding: '16px',
-                border: '1px solid #E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                background: 'var(--panel)', borderRadius: '16px', padding: '16px',
+                border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>Advance History</div>
+                    <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>Advance History</div>
                     <Link href={`/admin/salary/${empId}/advance`} style={{
                         fontSize: '12px', fontWeight: 700, color: '#00A651',
                         textDecoration: 'none', background: '#F0FDF4',
@@ -118,7 +118,7 @@ export default async function SalaryDetailPage({
                 </div>
 
                 {!(advances?.length) ? (
-                    <div style={{ textAlign: 'center', padding: '20px', color: '#9CA3AF', fontSize: '13px' }}>
+                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '13px' }}>
                         No advance records
                     </div>
                 ) : (
@@ -126,13 +126,13 @@ export default async function SalaryDetailPage({
                         {advances.map((adv: any) => (
                             <div key={adv.id} style={{
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '10px 12px', borderRadius: '10px', background: '#F9FAFB',
+                                padding: '10px 12px', borderRadius: '10px', background: 'var(--gray-50)',
                             }}>
                                 <div>
-                                    <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>
+                                    <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>
                                         {formatCurrency(adv.amount)}
                                     </div>
-                                    <div style={{ fontSize: '11px', color: '#9CA3AF' }}>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                                         {adv.date} · {adv.description || 'Advance'}
                                     </div>
                                 </div>

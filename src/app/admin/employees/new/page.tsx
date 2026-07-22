@@ -10,13 +10,13 @@ export default function NewEmployeePage() {
                 <Link href="/admin/employees" style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     width: '36px', height: '36px', borderRadius: '10px',
-                    background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', color: '#374151',
+                    background: 'var(--panel)', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', color: 'var(--text)',
                 }}>
                     <ChevronLeft size={20} />
                 </Link>
                 <div>
-                    <h1 style={{ fontWeight: 800, fontSize: '20px', color: '#111827', margin: 0 }}>Add Employee</h1>
-                    <p style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '1px' }}>Fill in the details below</p>
+                    <h1 style={{ fontWeight: 800, fontSize: '20px', color: 'var(--text)', margin: 0 }}>Add Employee</h1>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Fill in the details below</p>
                 </div>
             </div>
 

@@ -148,19 +148,19 @@ export default function AttendanceGrid({
 
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-            <div style={{ overflowX: 'auto', borderRadius: '14px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)', background: 'white' }}>
-                <div style={{ fontSize: '11px', color: '#9CA3AF', textAlign: 'right', padding: '6px 10px 0', background: 'white' }}>
+            <div style={{ overflowX: 'auto', borderRadius: '14px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)', background: 'var(--panel)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'right', padding: '6px 10px 0', background: 'var(--panel)' }}>
                     ← scroll →
                 </div>
 
                 <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: `${120 + daysInMonth * 36}px` }} aria-label={`Attendance for ${month}/${year}`}>
                     <thead>
-                        <tr style={{ background: '#F9FAFB' }}>
+                        <tr style={{ background: 'var(--gray-50)' }}>
                             <th scope="col" style={{
-                                position: 'sticky', left: 0, background: '#F9FAFB', zIndex: 10,
+                                position: 'sticky', left: 0, background: 'var(--gray-50)', zIndex: 10,
                                 padding: '10px 10px', textAlign: 'left',
-                                fontSize: '11px', fontWeight: 800, color: '#6B7280',
-                                borderBottom: '2px solid #E5E7EB', minWidth: '120px',
+                                fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)',
+                                borderBottom: '2px solid var(--border)', minWidth: '120px',
                                 whiteSpace: 'nowrap',
                             }}>
                                 Employee
@@ -169,9 +169,9 @@ export default function AttendanceGrid({
                                 <th scope="col" key={d} style={{
                                     padding: '6px 2px',
                                     fontSize: '11px', fontWeight: 700, textAlign: 'center',
-                                    color: d === todayDay ? '#00A651' : isSunday(d) ? '#EF4444' : '#6B7280',
-                                    background: d === todayDay ? '#F0FDF4' : isSunday(d) ? '#FEF2F2' : '#F9FAFB',
-                                    borderBottom: '2px solid #E5E7EB',
+                                    color: d === todayDay ? 'var(--green-primary)' : isSunday(d) ? '#EF4444' : 'var(--text-muted)',
+                                    background: d === todayDay ? 'var(--tint-success)' : isSunday(d) ? 'var(--tint-danger)' : 'var(--gray-50)',
+                                    borderBottom: '2px solid var(--border)',
                                     minWidth: '36px',
                                 }}>
                                     {d}
@@ -183,18 +183,18 @@ export default function AttendanceGrid({
 
                     <tbody>
                         {employees.map((emp, ri) => (
-                            <tr key={emp.id} style={{ background: ri % 2 === 0 ? 'white' : '#FAFAFA' }}>
+                            <tr key={emp.id} style={{ background: ri % 2 === 0 ? 'var(--panel)' : 'var(--gray-50)' }}>
                                 <th scope="row" style={{
                                     position: 'sticky', left: 0, zIndex: 5,
-                                    background: ri % 2 === 0 ? 'white' : '#FAFAFA',
+                                    background: ri % 2 === 0 ? 'var(--panel)' : 'var(--gray-50)',
                                     padding: '6px 10px',
-                                    borderBottom: '1px solid #F3F4F6',
+                                    borderBottom: '1px solid var(--border)',
                                     whiteSpace: 'nowrap',
                                     textAlign: 'left',
                                     fontWeight: 'normal',
                                 }}>
-                                    <div style={{ fontWeight: 800, fontSize: '12px', color: '#111827' }}>{emp.name}</div>
-                                    <div style={{ fontSize: '10px', color: '#9CA3AF' }}>{emp.emp_code}</div>
+                                    <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--text)' }}>{emp.name}</div>
+                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{emp.emp_code}</div>
                                 </th>
 
                                 {days.map(d => {
@@ -207,8 +207,10 @@ export default function AttendanceGrid({
                                     return (
                                         <td key={d} style={{
                                             padding: '4px 2px', textAlign: 'center',
-                                            background: d === todayDay ? '#F0FDF4' : isSunday(d) ? '#FEF9F9' : 'transparent',
-                                            borderBottom: '1px solid #F3F4F6',
+                                            background: d === todayDay
+                                                ? 'var(--tint-success)'
+                                                : isSunday(d) ? 'var(--tint-danger)' : 'transparent',
+                                            borderBottom: '1px solid var(--border)',
                                         }}>
                                             <button
                                                 onClick={() => cycleStatus(emp.id, dateStr)}
@@ -217,11 +219,11 @@ export default function AttendanceGrid({
                                                 style={{
                                                     width: '32px', height: '32px', borderRadius: '8px',
                                                     background: style.bg, color: style.color,
-                                                    border: changed ? '2px solid #1a1a2e' : '1.5px solid #E5E7EB',
+                                                    border: changed ? '2px solid var(--green-primary)' : '1.5px solid var(--border)',
                                                     cursor: 'pointer',
                                                     fontWeight: 900, fontSize: status.length > 2 ? '9px' : '11px',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    boxShadow: changed ? '0 0 0 2px rgba(26,26,46,0.2)' : 'none',
+                                                    boxShadow: changed ? '0 0 0 2px rgba(34,197,94,0.25)' : 'none',
                                                     transition: 'all 0.1s',
                                                     lineHeight: 1,
                                                 }}
@@ -241,7 +243,7 @@ export default function AttendanceGrid({
                 {settings.map(s => (
                     <div key={s.code} style={{
                         display: 'flex', alignItems: 'center', gap: '4px',
-                        fontSize: '11px', color: '#6B7280',
+                        fontSize: '11px', color: 'var(--text-muted)',
                     }}>
                         <span style={{
                             background: s.color, color: s.text_color,
@@ -251,7 +253,7 @@ export default function AttendanceGrid({
                         <span>{s.label}</span>
                     </div>
                 ))}
-                <div style={{ fontSize: '11px', color: '#9CA3AF', marginLeft: '4px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '4px' }}>
                     • Changed cells show dark border
                 </div>
             </div>

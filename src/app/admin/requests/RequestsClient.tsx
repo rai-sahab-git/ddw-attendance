@@ -98,7 +98,7 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                 >
                     <div
                         style={{
-                            background: 'white',
+                            background: 'var(--panel)',
                             borderRadius: 20,
                             width: '100%', maxWidth: 480,
                             maxHeight: '85vh',
@@ -113,22 +113,21 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                         </div>
 
                         {/* Title */}
-                        <div style={{ fontWeight: 800, fontSize: '16px', color: '#111827', marginBottom: '14px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text)', marginBottom: '14px' }}>
                             Review Request
                         </div>
 
                         {/* Request info card */}
-                        <div style={{
-                            background: 'linear-gradient(135deg,#F0FDF4,#ECFDF5)',
-                            border: '1px solid #D1FAE5',
+                        <div className="tint-success" style={{
+                            border: '1px solid var(--border)',
                             borderRadius: '14px', padding: '14px', marginBottom: '16px',
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>
-                                    <div style={{ fontWeight: 800, fontSize: '15px', color: '#111827' }}>
+                                    <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text)' }}>
                                         {actionItem.employees?.name}
                                     </div>
-                                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                                         {actionItem.employees?.emp_code}
                                     </div>
                                 </div>
@@ -142,10 +141,10 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                             </div>
 
                             <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                <div style={{ background: 'white', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', color: '#374151' }}>
+                                <div style={{ background: 'var(--panel)', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', color: 'var(--text)' }}>
                                     📋 {TYPE_LABEL[actionItem.request_type] ?? actionItem.request_type}
                                 </div>
-                                <div style={{ background: 'white', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', color: '#374151' }}>
+                                <div style={{ background: 'var(--panel)', borderRadius: '8px', padding: '6px 10px', fontSize: '12px', color: 'var(--text)' }}>
                                     📅 {new Date(actionItem.date ?? actionItem.date_from ?? '').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                 </div>
                                 {actionItem.requested_status && (
@@ -160,8 +159,8 @@ export default function RequestsClient({ requests, counts }: { requests: Request
 
                             {actionItem.reason && (
                                 <div style={{
-                                    marginTop: '10px', fontSize: '12px', color: '#6B7280',
-                                    fontStyle: 'italic', background: 'white',
+                                    marginTop: '10px', fontSize: '12px', color: 'var(--text-muted)',
+                                    fontStyle: 'italic', background: 'var(--panel)',
                                     borderRadius: '8px', padding: '8px 10px',
                                 }}>
                                     💬 "{actionItem.reason}"
@@ -173,7 +172,7 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                         <div style={{ marginBottom: '16px' }}>
                             <label style={{
                                 display: 'block', fontWeight: 700, fontSize: '11px',
-                                color: '#6B7280', textTransform: 'uppercase',
+                                color: 'var(--text-muted)', textTransform: 'uppercase',
                                 letterSpacing: '0.06em', marginBottom: '7px',
                             }}>
                                 Review Note (optional)
@@ -184,8 +183,8 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                                 placeholder="e.g. Verified with manager"
                                 style={{
                                     width: '100%', padding: '12px 14px', borderRadius: '12px',
-                                    border: '1.5px solid #E5E7EB', fontSize: '14px', outline: 'none',
-                                    boxSizing: 'border-box', background: '#FAFAFA',
+                                    border: '1.5px solid var(--border)', fontSize: '14px', outline: 'none',
+                                    boxSizing: 'border-box', background: 'var(--input-bg)', color: 'var(--input-text)',
                                 }}
                             />
                         </div>
@@ -238,29 +237,26 @@ export default function RequestsClient({ requests, counts }: { requests: Request
             {/* ── STATS ── */}
             <div className="kpi-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                 {[
-                    { label: 'Pending', value: counts.pending, bg: '#FEF3C7', color: '#D97706' },
-                    { label: 'Approved', value: counts.approved, bg: '#F0FDF4', color: '#059669' },
-                    { label: 'Rejected', value: counts.rejected, bg: '#FEF2F2', color: '#EF4444' },
-                ].map(({ label, value, bg, color }) => (
-                    <div key={label} className="kpi-card" style={{ background: bg, textAlign: 'center' }}>
-                        <div className="kpi-card__value" style={{ color }}>{value}</div>
+                    { label: 'Pending', value: counts.pending, tint: 'tint-warn', fg: 'var(--tint-warn-fg)' },
+                    { label: 'Approved', value: counts.approved, tint: 'tint-success', fg: 'var(--tint-success-fg)' },
+                    { label: 'Rejected', value: counts.rejected, tint: 'tint-danger', fg: 'var(--tint-danger-fg)' },
+                ].map(({ label, value, tint, fg }) => (
+                    <div key={label} className={`kpi-card ${tint}`} style={{ textAlign: 'center' }}>
+                        <div className="kpi-card__value" style={{ color: fg }}>{value}</div>
                         <div className="kpi-card__label">{label}</div>
                     </div>
                 ))}
             </div>
 
             {/* ── FILTER TABS ── */}
-            <div style={{ display: 'flex', gap: '8px', background: '#F3F4F6', borderRadius: '12px', padding: '4px' }}>
+            <div className="seg-tabs">
                 {(['pending', 'all', 'approved', 'rejected'] as const).map(f => (
-                    <button key={f} onClick={() => setFilter(f)}
-                        style={{
-                            flex: 1, padding: '8px 4px', borderRadius: '9px', border: 'none', cursor: 'pointer',
-                            fontWeight: 700, fontSize: '12px', textTransform: 'capitalize',
-                            background: filter === f ? 'white' : 'transparent',
-                            color: filter === f ? '#111827' : '#6B7280',
-                            boxShadow: filter === f ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                            transition: 'all 150ms ease',
-                        }}>
+                    <button
+                        key={f}
+                        type="button"
+                        onClick={() => setFilter(f)}
+                        className={`seg-tabs__btn${filter === f ? ' is-active' : ''}`}
+                    >
                         {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
                     </button>
                 ))}
@@ -269,14 +265,14 @@ export default function RequestsClient({ requests, counts }: { requests: Request
             {/* ── REQUEST LIST ── */}
             {filtered.length === 0 ? (
                 <div style={{
-                    background: 'white', borderRadius: '16px', padding: '40px 20px',
+                    background: 'var(--panel)', borderRadius: '16px', padding: '40px 20px',
                     textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                 }}>
                     <div style={{ fontSize: '36px', marginBottom: '12px' }}>📭</div>
-                    <div style={{ fontWeight: 700, fontSize: '15px', color: '#111827', marginBottom: '6px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text)', marginBottom: '6px' }}>
                         No {filter === 'all' ? '' : filter} requests
                     </div>
-                    <div style={{ fontSize: '13px', color: '#9CA3AF' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                         {filter === 'pending' ? 'All caught up!' : 'Nothing here yet'}
                     </div>
                 </div>
@@ -294,31 +290,29 @@ export default function RequestsClient({ requests, counts }: { requests: Request
 
                         return (
                             <div key={req.id} style={{
-                                background: 'white', borderRadius: '16px', padding: '14px 16px',
-                                boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-                                border: `1.5px solid ${isPending ? '#FEF3C7' : isApproved ? '#D1FAE5' : '#FEE2E2'}`,
+                                background: 'var(--panel)', borderRadius: '16px', padding: '14px 16px',
+                                boxShadow: 'var(--shadow-sm)',
+                                border: '1.5px solid var(--border)',
                             }}>
                                 {/* Top row */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                                     <div>
-                                        <div style={{ fontWeight: 800, fontSize: '15px', color: '#111827' }}>
+                                        <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text)' }}>
                                             {req.employees?.name}
                                         </div>
-                                        <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                                             {req.employees?.emp_code} &nbsp;•&nbsp; {TYPE_LABEL[req.request_type] ?? req.request_type}
                                         </div>
                                     </div>
-                                    <div style={{
+                                    <div className={isPending ? 'tint-warn' : isApproved ? 'tint-success' : 'tint-danger'} style={{
                                         display: 'flex', alignItems: 'center', gap: '5px',
-                                        background: isPending ? '#FEF9C3' : isApproved ? '#D1FAE5' : '#FEE2E2',
                                         borderRadius: '20px', padding: '4px 10px',
                                     }}>
-                                        {isPending && <Clock size={12} color="#D97706" />}
-                                        {isApproved && <CheckCircle size={12} color="#059669" />}
-                                        {!isPending && !isApproved && <XCircle size={12} color="#DC2626" />}
+                                        {isPending && <Clock size={12} />}
+                                        {isApproved && <CheckCircle size={12} />}
+                                        {!isPending && !isApproved && <XCircle size={12} />}
                                         <span style={{
                                             fontWeight: 700, fontSize: '11px', textTransform: 'capitalize',
-                                            color: isPending ? '#D97706' : isApproved ? '#059669' : '#DC2626',
                                         }}>
                                             {req.status}
                                         </span>
@@ -328,8 +322,8 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                                 {/* Meta row */}
                                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
                                     <span style={{
-                                        background: '#F3F4F6', borderRadius: '8px',
-                                        padding: '4px 10px', fontSize: '12px', color: '#374151',
+                                        background: 'var(--gray-50)', borderRadius: '8px',
+                                        padding: '4px 10px', fontSize: '12px', color: 'var(--text)',
                                     }}>
                                         📅 {dateStr}
                                     </span>
@@ -350,8 +344,8 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                                 {/* Reason */}
                                 {req.reason && (
                                     <div style={{
-                                        fontSize: '12px', color: '#6B7280', fontStyle: 'italic',
-                                        background: '#F9FAFB', borderRadius: '10px', padding: '8px 12px',
+                                        fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic',
+                                        background: 'var(--gray-50)', borderRadius: '10px', padding: '8px 12px',
                                         marginBottom: '10px',
                                     }}>
                                         💬 "{req.reason}"
@@ -371,16 +365,17 @@ export default function RequestsClient({ requests, counts }: { requests: Request
                                 {/* Review button (pending only) */}
                                 {isPending && (
                                     <button
+                                        type="button"
                                         onClick={() => { setActionItem(req); setReviewNote('') }}
+                                        className="tint-warn"
                                         style={{
                                             width: '100%', padding: '11px', borderRadius: '12px',
                                             fontWeight: 700, fontSize: '13px',
-                                            background: 'linear-gradient(135deg,#FFF7ED,#FEF3C7)',
-                                            color: '#92400E', border: '1.5px solid #FDE68A',
+                                            border: '1.5px solid var(--border)',
                                             cursor: 'pointer', display: 'flex',
                                             alignItems: 'center', justifyContent: 'center', gap: '6px',
                                         }}>
-                                        ✍️ Review Request
+                                        Review Request
                                     </button>
                                 )}
                             </div>

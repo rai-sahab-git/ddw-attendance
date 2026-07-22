@@ -89,11 +89,11 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
     const inp: React.CSSProperties = {
         flex: 1, padding: '9px 12px', borderRadius: '9px',
-        border: '1.5px solid #E5E7EB', fontSize: '14px', color: '#111827',
-        fontWeight: 700, background: '#FFFFFF', colorScheme: 'light',
+        border: '1.5px solid var(--border)', fontSize: '14px', color: 'var(--text)',
+        fontWeight: 700, background: 'var(--panel)', colorScheme: 'light',
     }
 
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>Loading...</div>
+    if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
     if (!employee) return <div style={{ padding: '40px', textAlign: 'center', color: '#EF4444' }}>Employee not found</div>
 
     return (
@@ -104,20 +104,20 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                 <Link href="/admin/employees" style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     width: '36px', height: '36px', borderRadius: '10px',
-                    background: '#F3F4F6', color: '#374151',
+                    background: 'var(--gray-50)', color: 'var(--text)',
                 }}>
                     <ChevronLeft size={20} />
                 </Link>
                 <div>
-                    <h1 style={{ fontWeight: 900, fontSize: '20px', color: '#111827', margin: 0 }}>{employee.name}</h1>
-                    <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
+                    <h1 style={{ fontWeight: 900, fontSize: '20px', color: 'var(--text)', margin: 0 }}>{employee.name}</h1>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
                         {employee.emp_code} · ₹{employee.monthly_salary.toLocaleString('en-IN')}/mo
                     </p>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: '12px', padding: '4px', gap: '4px' }}>
+            <div style={{ display: 'flex', background: 'var(--gray-50)', borderRadius: '12px', padding: '4px', gap: '4px' }}>
                 {(['info', 'rates'] as const).map(t => (
                     <button key={t} onClick={() => setTab(t)} style={{
                         flex: 1, padding: '10px', borderRadius: '9px', border: 'none',
@@ -158,7 +158,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                     )}
 
                     {settings.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '30px', color: '#9CA3AF', fontSize: '13px' }}>
+                        <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)', fontSize: '13px' }}>
                             No OT/Bonus types configured.{' '}
                             <Link href="/admin/settings" style={{ color: '#00A651', fontWeight: 700 }}>
                                 Settings → Add Type
@@ -179,8 +179,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
                         return (
                             <div key={s.code} style={{
-                                background: 'white', borderRadius: '14px', padding: '14px',
-                                border: '1px solid #E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                                background: 'var(--panel)', borderRadius: '14px', padding: '14px',
+                                border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                             }}>
                                 {/* Top */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -190,8 +190,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                                         fontWeight: 900, fontSize: '13px',
                                     }}>{s.code}</div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>{s.label}</div>
-                                        <div style={{ fontSize: '11px', color: '#9CA3AF' }}>
+                                        <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>{s.label}</div>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                                             {isFixed
                                                 ? `Global: ₹${globalVal} flat per occurrence`
                                                 : `Global: ${globalVal}× per day (₹${(perDay * (Number(globalVal) - 1)).toFixed(0)} bonus/day)`}
@@ -232,7 +232,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                                 )}
 
                                 {/* Preview */}
-                                <div style={{ marginTop: '8px', fontSize: '12px', color: '#6B7280', background: '#F9FAFB', padding: '8px', borderRadius: '8px' }}>
+                                <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', background: 'var(--gray-50)', padding: '8px', borderRadius: '8px' }}>
                                     {isFixed
                                         ? `💡 3 OT lage toh: ₹${(Number(curVal) * 3).toLocaleString('en-IN')} add hoga`
                                         : `💡 1 day lage toh: ₹${(perDay * (Number(curVal) - 1)).toFixed(0)} bonus (extra ${(Number(curVal) - 1)}× per day)`}
@@ -256,12 +256,12 @@ function OverrideInput({
     const [val, setVal] = useState(defaultValue)
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {prefix && <span style={{ fontWeight: 700, fontSize: '14px', color: '#374151' }}>{prefix}</span>}
+            {prefix && <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>{prefix}</span>}
             <input type="number" min="0" step={step} value={val}
                 onChange={e => setVal(e.target.value)}
                 placeholder={placeholder}
                 style={inputStyle} />
-            {suffix && <span style={{ fontSize: '12px', color: '#9CA3AF', whiteSpace: 'nowrap' }}>{suffix}</span>}
+            {suffix && <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{suffix}</span>}
             <button onClick={() => onSave(val)} disabled={saving} style={{
                 padding: '9px 16px', borderRadius: '9px', border: 'none',
                 background: saving ? '#9CA3AF' : 'linear-gradient(135deg,#00A651,#059669)',

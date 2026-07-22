@@ -50,12 +50,12 @@ export default async function AttendancePage({
 
       <div className="kpi-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         {[
-          { label: 'Total Employees', value: totalEmp ?? 0, bg: '#F0FDF4', color: '#059669' },
-          { label: 'Today Present', value: todayPresent, bg: '#EFF6FF', color: '#2563EB' },
-          { label: 'Days in Month', value: daysInMonth, bg: '#FFF7ED', color: '#EA580C' },
-        ].map(({ label, value, bg, color }) => (
-          <div key={label} className="kpi-card" style={{ background: bg, textAlign: 'center' }}>
-            <div className="kpi-card__value" style={{ color }}>{value}</div>
+          { label: 'Total Employees', value: totalEmp ?? 0, tint: 'tint-success', fg: 'var(--tint-success-fg)' },
+          { label: 'Today Present', value: todayPresent, tint: 'tint-info', fg: 'var(--tint-info-fg)' },
+          { label: 'Days in Month', value: daysInMonth, tint: 'tint-warn', fg: 'var(--tint-warn-fg)' },
+        ].map(({ label, value, tint, fg }) => (
+          <div key={label} className={`kpi-card ${tint}`} style={{ textAlign: 'center' }}>
+            <div className="kpi-card__value" style={{ color: fg }}>{value}</div>
             <div className="kpi-card__label">{label}</div>
           </div>
         ))}

@@ -104,12 +104,12 @@ export default async function SalaryPage({
 
             <div className="kpi-row" style={{ marginBottom: 14, gridTemplateColumns: 'repeat(3, 1fr)' }}>
                 {[
-                    { label: 'Total Payable', value: formatCurrency(totalPayable), color: '#059669', bg: '#F0FDF4' },
-                    { label: 'Total Paid', value: formatCurrency(totalPaid), color: '#2563EB', bg: '#EFF6FF' },
-                    { label: 'Balance Due', value: formatCurrency(totalBalance), color: totalBalance > 0 ? '#EF4444' : '#059669', bg: totalBalance > 0 ? '#FEF2F2' : '#F0FDF4' },
-                ].map(({ label, value, color, bg }) => (
-                    <div key={label} className="kpi-card" style={{ background: bg, textAlign: 'center' }}>
-                        <div className="kpi-card__value" style={{ color, fontSize: 16 }}>{value}</div>
+                    { label: 'Total Payable', value: formatCurrency(totalPayable), tint: 'tint-success', fg: 'var(--tint-success-fg)' },
+                    { label: 'Total Paid', value: formatCurrency(totalPaid), tint: 'tint-info', fg: 'var(--tint-info-fg)' },
+                    { label: 'Balance Due', value: formatCurrency(totalBalance), tint: totalBalance > 0 ? 'tint-danger' : 'tint-success', fg: totalBalance > 0 ? 'var(--tint-danger-fg)' : 'var(--tint-success-fg)' },
+                ].map(({ label, value, tint, fg }) => (
+                    <div key={label} className={`kpi-card ${tint}`} style={{ textAlign: 'center' }}>
+                        <div className="kpi-card__value" style={{ color: fg, fontSize: 16 }}>{value}</div>
                         <div className="kpi-card__label">{label}</div>
                     </div>
                 ))}
@@ -177,7 +177,7 @@ export default async function SalaryPage({
                         <Link key={s.employee.id} href={`/admin/salary/${s.employee.id}?month=${month}&year=${year}`}
                             style={{ textDecoration: 'none' }}>
                             <div style={{
-                                background: 'white', borderRadius: 14, padding: 14,
+                                background: 'var(--panel)', borderRadius: 14, padding: 14,
                                 boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
                                 borderLeft: `4px solid ${isFullyPaid ? '#00A651' : hasBalance ? '#EF4444' : '#E5E7EB'}`,
                             }}>
@@ -190,8 +190,8 @@ export default async function SalaryPage({
                                             color: 'white', fontWeight: 800, fontSize: 13,
                                         }}>{initials}</div>
                                         <div>
-                                            <div style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>{s.employee.name}</div>
-                                            <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                                            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)' }}>{s.employee.name}</div>
+                                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                                                 {s.employee.emp_code} · ✓ {s.presentDays}d
                                                 {s.absentDays > 0 && <span style={{ color: '#EF4444' }}> · ✗ {s.absentDays}d</span>}
                                             </div>

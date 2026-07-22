@@ -11,7 +11,7 @@ const REPORTS = [
     { type: 'amounts', label: 'Day amounts', desc: 'Per-day value from custom types', icon: IndianRupee, color: '#0891B2' },
     { type: 'advances', label: 'Advances register', desc: 'All advance payments & status', icon: FileSpreadsheet, color: '#7C3AED' },
     { type: 'settings', label: 'Attendance types', desc: 'Custom codes, amounts & calc rules', icon: Settings2, color: '#D97706' },
-    { type: 'full', label: 'Full pack', desc: 'Salary + Attendance + Amounts + Advances', icon: Download, color: '#0F172A' },
+    { type: 'full', label: 'Full pack', desc: 'Salary + Attendance + Amounts + Advances', icon: Download, color: '#94A3B8' },
 ]
 
 export default function ReportsPage() {

@@ -48,8 +48,8 @@ export default function AppearancePage() {
                                     <Icon size={20} />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{label}</div>
-                                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{desc}</div>
+                                    <div style={{ fontWeight: 800, fontSize: 15, color: active ? 'var(--green-dark)' : 'var(--text)' }}>{label}</div>
+                                    <div style={{ fontSize: 12, color: active ? 'var(--green-dark)' : 'var(--text-muted)', opacity: active ? 0.9 : 1 }}>{desc}</div>
                                 </div>
                                 {active && <Check size={18} color="var(--green-primary)" />}
                             </button>

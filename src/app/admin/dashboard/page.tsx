@@ -38,17 +38,17 @@ export default async function DashboardPage() {
     const greeting = today.getHours() < 12 ? 'Morning' : today.getHours() < 17 ? 'Afternoon' : 'Evening'
 
     const actions = [
-        { href: '/admin/attendance/mark', icon: CalendarCheck, label: 'Mark Attendance', sub: "Today's attendance", color: '#00A651', bg: '#F0FDF4' },
-        { href: '/admin/salary', icon: IndianRupee, label: 'Salary Sheet', sub: `${MONTH_NAMES[month]} ${year}`, color: '#2563EB', bg: '#EFF6FF' },
-        { href: '/admin/employees', icon: Users, label: 'Employees', sub: `${totalEmp ?? 0} active`, color: '#7C3AED', bg: '#F5F3FF' },
-        { href: '/admin/requests', icon: ClipboardList, label: 'Requests', sub: `${pendingReq ?? 0} pending`, color: '#D97706', bg: '#FFFBEB' },
+        { href: '/admin/attendance/mark', icon: CalendarCheck, label: 'Mark Attendance', sub: "Today's attendance", color: 'var(--green-primary)', tint: 'tint-success' },
+        { href: '/admin/salary', icon: IndianRupee, label: 'Salary Sheet', sub: `${MONTH_NAMES[month]} ${year}`, color: 'var(--tint-info-fg)', tint: 'tint-info' },
+        { href: '/admin/employees', icon: Users, label: 'Employees', sub: `${totalEmp ?? 0} active`, color: 'var(--tint-purple-fg)', tint: 'tint-purple' },
+        { href: '/admin/requests', icon: ClipboardList, label: 'Requests', sub: `${pendingReq ?? 0} pending`, color: 'var(--tint-warn-fg)', tint: 'tint-warn' },
     ]
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="page-head">
                 <div>
-                    <p style={{ margin: 0, fontSize: 13, color: '#64748B' }}>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
                         {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                     <h1>Good {greeting}</h1>
@@ -77,17 +77,17 @@ export default async function DashboardPage() {
 
             {(pendingReq ?? 0) > 0 && (
                 <Link href="/admin/requests" style={{ textDecoration: 'none' }}>
-                    <div style={{
-                        background: '#FFFBEB', borderRadius: 14, padding: '12px 14px',
-                        border: '1.5px solid #FDE68A',
+                    <div className="tint-warn" style={{
+                        borderRadius: 14, padding: '12px 14px',
+                        border: '1.5px solid var(--border)',
                         display: 'flex', alignItems: 'center', gap: 10,
                     }}>
-                        <AlertCircle size={18} color="#D97706" />
+                        <AlertCircle size={18} />
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 800, fontSize: 13, color: '#92400E' }}>
+                            <div style={{ fontWeight: 800, fontSize: 13 }}>
                                 {pendingReq} pending request{(pendingReq ?? 0) > 1 ? 's' : ''} to review
                             </div>
-                            <div style={{ fontSize: 11, color: '#B45309', marginTop: 1 }}>Open requests →</div>
+                            <div style={{ fontSize: 11, opacity: 0.85, marginTop: 1 }}>Open requests →</div>
                         </div>
                     </div>
                 </Link>
@@ -95,26 +95,26 @@ export default async function DashboardPage() {
 
             <div className="dash-grid">
                 <div>
-                    <div style={{ fontWeight: 800, fontSize: 12, color: '#64748B', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ fontWeight: 800, fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Quick Actions
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                        {actions.map(({ href, icon: Icon, label, sub, color, bg }) => (
+                        {actions.map(({ href, icon: Icon, label, sub, color, tint }) => (
                             <Link key={href} href={href} style={{ textDecoration: 'none' }}>
-                                <div style={{
-                                    background: bg, borderRadius: 16, padding: '16px 14px',
-                                    border: `1px solid ${color}22`, height: '100%',
+                                <div className={tint} style={{
+                                    borderRadius: 16, padding: '16px 14px',
+                                    border: '1px solid var(--border)', height: '100%',
                                 }}>
                                     <div style={{
                                         width: 38, height: 38, borderRadius: 10,
-                                        background: `${color}18`,
+                                        background: 'var(--panel)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         marginBottom: 10,
                                     }}>
                                         <Icon size={20} color={color} />
                                     </div>
-                                    <div style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>{label}</div>
-                                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{sub}</div>
+                                    <div style={{ fontWeight: 800, fontSize: 14 }}>{label}</div>
+                                    <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{sub}</div>
                                 </div>
                             </Link>
                         ))}
@@ -125,8 +125,8 @@ export default async function DashboardPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <Settings size={18} color="#64748B" />
                                 <div>
-                                    <div style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>Attendance Settings</div>
-                                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>Custom types, OT rules, salary rules</div>
+                                    <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)' }}>Attendance Settings</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Custom types, OT rules, salary rules</div>
                                 </div>
                             </div>
                             <span style={{ color: '#D1D5DB', fontSize: 18 }}>›</span>
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
                     </div>
                     <div className="panel__body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {(!recentRequests || recentRequests.length === 0) && (
-                            <div style={{ color: '#9CA3AF', fontSize: 13, padding: '20px 0', textAlign: 'center' }}>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: '20px 0', textAlign: 'center' }}>
                                 No pending requests
                             </div>
                         )}
@@ -160,21 +160,21 @@ export default async function DashboardPage() {
                                         alignItems: 'center',
                                         padding: '10px 12px',
                                         borderRadius: 12,
-                                        background: '#F8FAFC',
-                                        border: '1px solid #F1F5F9',
+                                        background: 'var(--gray-50)',
+                                        border: '1px solid var(--border)',
                                     }}
                                 >
                                     <div>
-                                        <div style={{ fontWeight: 700, fontSize: 13, color: '#111827' }}>
+                                        <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text)' }}>
                                             {emp?.name ?? 'Employee'}
                                         </div>
-                                        <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                                             {req.request_type?.replace('_', ' ')} · {req.date_from}
                                         </div>
                                     </div>
-                                    <span style={{
-                                        fontSize: 10, fontWeight: 800, color: '#B45309',
-                                        background: '#FEF3C7', padding: '3px 8px', borderRadius: 999,
+                                    <span className="tint-warn" style={{
+                                        fontSize: 10, fontWeight: 800,
+                                        padding: '3px 8px', borderRadius: 999,
                                         textTransform: 'uppercase',
                                     }}>
                                         Pending

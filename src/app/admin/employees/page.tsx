@@ -28,20 +28,20 @@ export default async function EmployeesPage() {
             </div>
 
             <div className="kpi-row" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <div className="kpi-card" style={{ background: '#F0FDF4' }}>
-                    <div className="kpi-card__value" style={{ color: '#059669' }}>{active}</div>
+                <div className="kpi-card tint-success">
+                    <div className="kpi-card__value" style={{ color: 'var(--tint-success-fg)' }}>{active}</div>
                     <div className="kpi-card__label">Active</div>
                 </div>
-                <div className="kpi-card" style={{ background: '#FEF2F2' }}>
-                    <div className="kpi-card__value" style={{ color: '#EF4444' }}>{inactive}</div>
+                <div className="kpi-card tint-danger">
+                    <div className="kpi-card__value" style={{ color: 'var(--tint-danger-fg)' }}>{inactive}</div>
                     <div className="kpi-card__label">Inactive</div>
                 </div>
             </div>
 
             {!employees?.length ? (
                 <div className="panel" style={{ padding: '40px 20px', textAlign: 'center' }}>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: '#111827', marginBottom: 6 }}>No employees yet</div>
-                    <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>Add your first employee to get started</div>
+                    <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)', marginBottom: 6 }}>No employees yet</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>Add your first employee to get started</div>
                     <Link href="/admin/employees/new" className="btn btn--primary">Add Employee</Link>
                 </div>
             ) : (
@@ -62,13 +62,13 @@ export default async function EmployeesPage() {
                             <tbody>
                                 {employees.map(emp => (
                                     <tr key={emp.id}>
-                                        <td style={{ fontWeight: 700, color: '#64748B' }}>{emp.emp_code}</td>
+                                        <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{emp.emp_code}</td>
                                         <td>
                                             <Link href={`/admin/employees/${emp.id}`} className="row-link">
                                                 {emp.name}
                                             </Link>
                                         </td>
-                                        <td style={{ color: '#64748B' }}>{emp.phone || '—'}</td>
+                                        <td style={{ color: 'var(--text-muted)' }}>{emp.phone || '—'}</td>
                                         <td style={{ fontWeight: 800, color: '#00A651' }}>{formatCurrency(emp.monthly_salary)}</td>
                                         <td>
                                             <span style={{
@@ -95,7 +95,7 @@ export default async function EmployeesPage() {
                         {employees.map(emp => (
                             <Link key={emp.id} href={`/admin/employees/${emp.id}`} style={{
                                 display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
-                                background: 'white', borderRadius: 14, padding: 14,
+                                background: 'var(--panel)', borderRadius: 14, padding: 14,
                                 boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
                             }}>
                                 <div style={{
@@ -109,12 +109,12 @@ export default async function EmployeesPage() {
                                     {emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>{emp.name}</div>
-                                    <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{emp.emp_code}</div>
+                                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{emp.name}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{emp.emp_code}</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontWeight: 800, fontSize: 14, color: '#00A651' }}>{formatCurrency(emp.monthly_salary)}</div>
-                                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>per month</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>per month</div>
                                 </div>
                                 <ChevronRight size={16} color="#D1D5DB" />
                             </Link>

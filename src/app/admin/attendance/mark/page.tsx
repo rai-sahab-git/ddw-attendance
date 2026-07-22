@@ -127,8 +127,8 @@ export default function MarkAttendancePage() {
                     onClick={() => router.back()}
                     aria-label="Go back"
                     style={{
-                        width: '38px', height: '38px', background: 'white',
-                        borderRadius: '12px', border: '1px solid #E5E7EB',
+                        width: '38px', height: '38px', background: 'var(--panel)',
+                        borderRadius: '12px', border: '1px solid var(--border)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                     }}
@@ -138,20 +138,20 @@ export default function MarkAttendancePage() {
                     </svg>
                 </button>
                 <div>
-                    <div style={{ fontWeight: 800, fontSize: '18px', color: '#111827' }}>Mark Attendance</div>
-                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '1px' }}>{displayDate}</div>
+                    <div style={{ fontWeight: 800, fontSize: '18px', color: 'var(--text)' }}>Mark Attendance</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>{displayDate}</div>
                 </div>
             </div>
 
             <div style={{
-                background: 'white', borderRadius: '16px',
+                background: 'var(--panel)', borderRadius: '16px',
                 padding: '12px 16px',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
                 <div>
                     <span style={{ fontWeight: 800, fontSize: '20px', color: '#00A651' }}>{presentCount}</span>
-                    <span style={{ fontSize: '14px', color: '#6B7280' }}> / {records.length} present</span>
+                    <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}> / {records.length} present</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => markAll(defaultStatus)} style={{
@@ -181,13 +181,13 @@ export default function MarkAttendancePage() {
 
             {records.map(({ employee, status, ot_hours }) => {
                 const opt = statusOptions.find(o => o.code === status) ?? {
-                    code: status, label: status, color: '#6B7280', text_color: '#FFFFFF',
+                    code: status, label: status, color: 'var(--text-muted)', text_color: '#FFFFFF',
                 }
                 const initials = employee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
                 const isOt = (opt.calc_type === 'ot_fixed') || status === 'OT' || status === '2OT'
                 return (
                     <div key={employee.id} style={{
-                        background: 'white', borderRadius: '16px',
+                        background: 'var(--panel)', borderRadius: '16px',
                         padding: '14px',
                         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
                         border: `2px solid ${opt.color}22`,
@@ -204,8 +204,8 @@ export default function MarkAttendancePage() {
                                     {initials}
                                 </div>
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>{employee.name}</div>
-                                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '1px' }}>{employee.emp_code}</div>
+                                    <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>{employee.name}</div>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>{employee.emp_code}</div>
                                 </div>
                             </div>
                             <div style={{
@@ -247,7 +247,7 @@ export default function MarkAttendancePage() {
 
                         {isOt && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
-                                <label htmlFor={`ot-${employee.id}`} style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>OT Hours:</label>
+                                <label htmlFor={`ot-${employee.id}`} style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>OT Hours:</label>
                                 <input
                                     id={`ot-${employee.id}`}
                                     type="number"
@@ -262,7 +262,7 @@ export default function MarkAttendancePage() {
                                         outline: 'none', textAlign: 'center',
                                     }}
                                 />
-                                <span style={{ fontSize: '12px', color: '#9CA3AF' }}>hrs</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>hrs</span>
                             </div>
                         )}
                     </div>

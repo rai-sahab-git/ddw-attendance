@@ -67,12 +67,12 @@ export default function AdvanceForm({ employeeId, employeeName, month, year }: P
 
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '12px 14px', borderRadius: '10px',
-        border: '1.5px solid #E5E7EB', fontSize: '15px', color: '#111827',
-        background: '#FFFFFF', boxSizing: 'border-box', fontWeight: 600,
+        border: '1.5px solid var(--border)', fontSize: '15px', color: 'var(--text)',
+        background: 'var(--panel)', boxSizing: 'border-box', fontWeight: 600,
         colorScheme: 'light',
     }
     const labelStyle: React.CSSProperties = {
-        display: 'block', fontWeight: 700, fontSize: '11px', color: '#6B7280',
+        display: 'block', fontWeight: 700, fontSize: '11px', color: 'var(--text-muted)',
         marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em',
     }
 
@@ -81,7 +81,7 @@ export default function AdvanceForm({ employeeId, employeeName, month, year }: P
     return (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-            <div style={{ background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
+            <div style={{ background: 'var(--panel)', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
                     <div>
@@ -105,15 +105,15 @@ export default function AdvanceForm({ employeeId, employeeName, month, year }: P
             </div>
 
             {/* Deduction month */}
-            <div style={{ background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
-                <div style={{ fontWeight: 800, fontSize: '13px', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+            <div style={{ background: 'var(--panel)', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
                     Deduction
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <div>
-                        <div style={{ fontWeight: 700, fontSize: '14px', color: '#111827' }}>Deduct in a specific month</div>
-                        <div style={{ fontSize: '12px', color: '#9CA3AF' }}>Which month's salary to deduct from</div>
+                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>Deduct in a specific month</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Which month's salary to deduct from</div>
                     </div>
                     <label style={{ position: 'relative', display: 'inline-block', width: '48px', height: '26px', cursor: 'pointer' }}>
                         <input type="checkbox" name="deduct_now" checked={form.deduct_now} onChange={handleChange}
@@ -124,7 +124,7 @@ export default function AdvanceForm({ employeeId, employeeName, month, year }: P
                         }}>
                             <span style={{
                                 position: 'absolute', top: '3px', left: form.deduct_now ? '25px' : '3px',
-                                width: '20px', height: '20px', borderRadius: '50%', background: 'white',
+                                width: '20px', height: '20px', borderRadius: '50%', background: 'var(--panel)',
                                 transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                             }} />
                         </span>

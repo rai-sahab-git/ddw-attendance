@@ -140,12 +140,12 @@ export default function AttendanceSettingsPage() {
 
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '11px 14px', borderRadius: '10px',
-        border: '1.5px solid #E5E7EB', fontSize: '14px', color: '#111827',
-        background: '#FFFFFF', boxSizing: 'border-box',
+        border: '1.5px solid var(--border)', fontSize: '14px', color: 'var(--text)',
+        background: 'var(--panel)', boxSizing: 'border-box',
         colorScheme: 'light',
     }
     const labelStyle: React.CSSProperties = {
-        display: 'block', fontWeight: 700, fontSize: '11px', color: '#6B7280',
+        display: 'block', fontWeight: 700, fontSize: '11px', color: 'var(--text-muted)',
         marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em',
     }
 
@@ -183,15 +183,13 @@ export default function AttendanceSettingsPage() {
             )}
 
             {/* Calc type legend */}
-            <div style={{ background: '#F8FAFC', borderRadius: '14px', padding: '14px', border: '1px solid #E5E7EB' }}>
-                <div style={{ fontWeight: 800, fontSize: '12px', color: '#374151', marginBottom: '8px' }}>
-                    📖 Calc Type Guide
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div className="panel">
+                <div className="panel__head">Calc Type Guide</div>
+                <div className="panel__body" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {CALC_TYPES.map(ct => (
                         <div key={ct.value} style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
-                            <span style={{ fontWeight: 700, color: '#374151', minWidth: '80px' }}>{ct.label}</span>
-                            <span style={{ color: '#6B7280' }}>{ct.desc}</span>
+                            <span style={{ fontWeight: 700, color: 'var(--text)', minWidth: '80px' }}>{ct.label}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>{ct.desc}</span>
                         </div>
                     ))}
                 </div>
@@ -199,18 +197,18 @@ export default function AttendanceSettingsPage() {
 
             {/* List */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#9CA3AF' }}>Loading...</div>
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading...</div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {settings.map(s => (
                         <div key={s.id} style={{
-                            background: 'white', borderRadius: '14px', padding: '14px 14px 14px 10px',
+                            background: 'var(--panel)', borderRadius: '14px', padding: '14px 14px 14px 10px',
                             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                            border: s.is_active ? '1px solid #E5E7EB' : '1px dashed #D1D5DB',
+                            border: s.is_active ? '1px solid var(--border)' : '1px dashed var(--border)',
                             opacity: s.is_active ? 1 : 0.6,
                             display: 'flex', alignItems: 'center', gap: '10px',
                         }}>
-                            <GripVertical size={16} color="#D1D5DB" style={{ flexShrink: 0 }} />
+                            <GripVertical size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
 
                             <div style={{
                                 background: s.color, color: s.text_color,
@@ -223,14 +221,14 @@ export default function AttendanceSettingsPage() {
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <span style={{ fontWeight: 800, fontSize: '14px', color: '#111827' }}>{s.label}</span>
+                                    <span style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>{s.label}</span>
                                     {s.is_system && (
                                         <span title="System type" aria-label="System type">
                                             <ShieldCheck size={12} color="#9CA3AF" />
                                         </span>
                                     )}
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                                     {CALC_TYPES.find(c => c.value === s.calc_type)?.label ?? s.calc_type}
                                     {s.calc_type === 'ot_fixed' && s.fixed_amount > 0 && (
                                         <span style={{ color: '#F97316', marginLeft: '6px' }}>+₹{s.fixed_amount}/day</span>
@@ -240,19 +238,20 @@ export default function AttendanceSettingsPage() {
 
                             <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                                 <button onClick={() => toggleActive(s)} title={s.is_active ? 'Disable' : 'Enable'}
+                                    className={s.is_active ? 'tint-success' : undefined}
                                     style={{
                                         width: '30px', height: '30px', borderRadius: '8px', border: 'none',
-                                        background: s.is_active ? '#F0FDF4' : '#F3F4F6',
-                                        color: s.is_active ? '#059669' : '#9CA3AF',
+                                        background: s.is_active ? undefined : 'var(--gray-50)',
+                                        color: s.is_active ? undefined : 'var(--text-muted)',
                                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     }}>
                                     <Check size={14} />
                                 </button>
 
                                 <button onClick={() => openEdit(s)}
+                                    className="tint-info"
                                     style={{
                                         width: '30px', height: '30px', borderRadius: '8px', border: 'none',
-                                        background: '#EFF6FF', color: '#2563EB',
                                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     }}>
                                     <Pencil size={13} />
@@ -260,9 +259,9 @@ export default function AttendanceSettingsPage() {
 
                                 {!s.is_system && (
                                     <button onClick={() => handleDelete(s.id)} disabled={deletingId === s.id}
+                                        className="tint-danger"
                                         style={{
                                             width: '30px', height: '30px', borderRadius: '8px', border: 'none',
-                                            background: '#FEF2F2', color: '#EF4444',
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         }}>
                                         <Trash2 size={13} />
@@ -282,7 +281,7 @@ export default function AttendanceSettingsPage() {
                     display: 'flex', alignItems: 'flex-end',
                 }} onClick={() => setShowForm(false)}>
                     <div onClick={e => e.stopPropagation()} style={{
-                        width: '100%', background: 'white',
+                        width: '100%', background: 'var(--panel)',
                         borderRadius: '20px 20px 0 0', padding: '20px 16px',
                         paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
                         maxHeight: '90dvh', overflowY: 'auto',
@@ -292,7 +291,7 @@ export default function AttendanceSettingsPage() {
                                 {editItem ? '✏️ Edit Type' : '➕ New Attendance Type'}
                             </h2>
                             <button onClick={() => setShowForm(false)}
-                                style={{ background: '#F3F4F6', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}>
+                                style={{ background: 'var(--gray-50)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer' }}>
                                 <X size={18} />
                             </button>
                         </div>
@@ -306,7 +305,7 @@ export default function AttendanceSettingsPage() {
                                     placeholder="OT, 2P, NITE, EXTRA..."
                                     required
                                     style={{ ...inputStyle, textTransform: 'uppercase', background: editItem ? '#F9FAFB' : 'white' }} />
-                                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>Uppercase only. Used as cell label in grid.</span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Uppercase only. Used as cell label in grid.</span>
                             </div>
 
                             <div>
@@ -330,8 +329,8 @@ export default function AttendanceSettingsPage() {
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                     <input type="color" name="color" value={form.color} onChange={handleChange}
-                                        style={{ width: '44px', height: '36px', borderRadius: '8px', border: '1px solid #E5E7EB', cursor: 'pointer', padding: '2px' }} />
-                                    <span style={{ fontSize: '12px', color: '#6B7280' }}>Custom color</span>
+                                        style={{ width: '44px', height: '36px', borderRadius: '8px', border: '1px solid var(--border)', cursor: 'pointer', padding: '2px' }} />
+                                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Custom color</span>
                                     <div style={{
                                         background: form.color, color: form.text_color,
                                         borderRadius: '8px', padding: '5px 12px',
@@ -369,7 +368,7 @@ export default function AttendanceSettingsPage() {
                                     ))}
                                 </select>
                                 {selectedCalcType && (
-                                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px', padding: '8px', background: '#F9FAFB', borderRadius: '8px' }}>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', padding: '8px', background: 'var(--gray-50)', borderRadius: '8px' }}>
                                         ℹ️ {selectedCalcType.desc}
                                     </div>
                                 )}
@@ -381,7 +380,7 @@ export default function AttendanceSettingsPage() {
                                     <input name="fixed_amount" type="number" min="0" step="0.01"
                                         value={form.fixed_amount} onChange={handleChange}
                                         placeholder="e.g. 150" style={inputStyle} />
-                                    <span style={{ fontSize: '11px', color: '#9CA3AF' }}>
+                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                                         This amount is added to salary automatically
                                     </span>
                                 </div>

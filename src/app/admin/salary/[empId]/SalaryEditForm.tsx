@@ -54,12 +54,12 @@ export default function SalaryEditForm({ employee, month, year, savedRecord, cur
 
     const inp: React.CSSProperties = {
         width: '100%', padding: '12px 14px', borderRadius: '10px',
-        border: '1.5px solid #E5E7EB', fontSize: '15px',
-        color: '#111827', background: 'white', outline: 'none',
+        border: '1.5px solid var(--border)', fontSize: '15px',
+        color: 'var(--text)', background: 'var(--panel)', outline: 'none',
         boxSizing: 'border-box', fontWeight: 700,
     }
     const lbl: React.CSSProperties = {
-        display: 'block', fontWeight: 700, fontSize: '11px', color: '#6B7280',
+        display: 'block', fontWeight: 700, fontSize: '11px', color: 'var(--text-muted)',
         marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.05em',
     }
 
@@ -67,8 +67,8 @@ export default function SalaryEditForm({ employee, month, year, savedRecord, cur
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
             {/* Attendance Breakdown */}
-            <div style={{ background: '#F8FAFC', borderRadius: '14px', padding: '14px', border: '1px solid #E5E7EB' }}>
-                <div style={{ fontWeight: 800, fontSize: '13px', color: '#374151', marginBottom: '10px' }}>
+            <div style={{ background: '#F8FAFC', borderRadius: '14px', padding: '14px', border: '1px solid var(--border)' }}>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)', marginBottom: '10px' }}>
                     📊 Attendance Breakdown
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -115,8 +115,8 @@ export default function SalaryEditForm({ employee, month, year, savedRecord, cur
             </div>
 
             {/* Manual Adjustments */}
-            <div style={{ background: 'white', borderRadius: '14px', padding: '14px', border: '1px solid #E5E7EB' }}>
-                <div style={{ fontWeight: 800, fontSize: '13px', color: '#374151', marginBottom: '12px' }}>
+            <div style={{ background: 'var(--panel)', borderRadius: '14px', padding: '14px', border: '1px solid var(--border)' }}>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)', marginBottom: '12px' }}>
                     ✨ Manual Adjustments
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -124,13 +124,13 @@ export default function SalaryEditForm({ employee, month, year, savedRecord, cur
                         <label style={lbl}>Extra Bonus / Addition (₹)</label>
                         <input name="bonus_manual" type="number" min="0" step="0.01"
                             value={form.bonus_manual} onChange={handleChange} placeholder="0" style={inp} />
-                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>Festival bonus, incentive etc</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Festival bonus, incentive etc</span>
                     </div>
                     <div>
                         <label style={lbl}>Other Deductions (₹)</label>
                         <input name="other_deductions" type="number" min="0" step="0.01"
                             value={form.other_deductions} onChange={handleChange} placeholder="0" style={inp} />
-                        <span style={{ fontSize: '11px', color: '#9CA3AF' }}>Fine, damage etc (advance auto deducted)</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Fine, damage etc (advance auto deducted)</span>
                     </div>
                 </div>
             </div>
@@ -157,8 +157,8 @@ export default function SalaryEditForm({ employee, month, year, savedRecord, cur
             </div>
 
             {/* Payment */}
-            <div style={{ background: 'white', borderRadius: '14px', padding: '14px', border: '1px solid #E5E7EB' }}>
-                <div style={{ fontWeight: 800, fontSize: '13px', color: '#374151', marginBottom: '12px' }}>
+            <div style={{ background: 'var(--panel)', borderRadius: '14px', padding: '14px', border: '1px solid var(--border)' }}>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)', marginBottom: '12px' }}>
                     💵 Payment
                 </div>
                 <label style={lbl}>Amount Paid (₹)</label>
@@ -202,7 +202,7 @@ function Row({ label, value, color = '#374151', bold = false, small = false }: {
 }) {
     return (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: small ? '12px' : '13px', color: '#6B7280', fontWeight: bold ? 800 : 500 }}>{label}</span>
+            <span style={{ fontSize: small ? '12px' : '13px', color: 'var(--text-muted)', fontWeight: bold ? 800 : 500 }}>{label}</span>
             <span style={{ fontSize: small ? '12px' : '13px', color, fontWeight: bold ? 900 : 700 }}>{value}</span>
         </div>
     )

@@ -29,7 +29,7 @@ export function buildStatusStyles(
     settings: AttendanceStatusOption[],
 ): Record<string, { bg: string; color: string; label: string }> {
     const styles: Record<string, { bg: string; color: string; label: string }> = {
-        '': { bg: 'transparent', color: '#6B7280', label: 'Empty' },
+        '': { bg: 'transparent', color: 'var(--text-muted)', label: 'Empty' },
     }
     for (const s of settings) {
         styles[s.code] = {
